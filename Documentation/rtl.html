@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>RTL | Adminto - Bootstrap 5 Admin Dashboard Template</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="A fully featured admin theme which can be used to build CRM, CMS, etc." name="description" />
+    <meta content="Coderthemes" name="author" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <!-- App favicon -->
+    <link rel="shortcut icon" href="assets/images/favicon.ico">
+
+    <!-- App css -->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" id="bs-default-stylesheet" />
+    <link href="assets/css/app.min.css" rel="stylesheet" type="text/css" id="app-default-stylesheet" />
+
+    <!-- icons -->
+    <link href="assets/css/icons.min.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body class="loading">
+
+    <!-- Begin page -->
+    <div id="wrapper">
+
+        <!-- ========== Left Sidebar Start ========== -->
+        <div class="left-side-menu">
+
+            <!-- LOGO -->
+            <div class="logo-box">
+
+                <a href="index.html" class="logo logo-light">
+                    <span class="logo-sm">
+                        <img src="assets/images/logo-sm.png" alt="" height="24">
+                    </span>
+                    <span class="logo-lg">
+                        <img src="assets/images/logo-light.png" alt="" height="20">
+                    </span>
+                </a>
+            </div>
+
+            <div class="h-100" data-simplebar>
+
+                <!--- Sidemenu -->
+                <div id="sidebar-menu">
+
+                    <ul id="side-menu">
+
+                        <li class="menu-title">Docs</li>
+
+                        <li>
+                            <a href="index.html">
+                                <i class="ri-honour-line"></i>
+                                <span> Introduction </span>
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="setup.html">
+                                <i class="ri-tools-fill"></i>
+                                <span> Setup </span>
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="customization.html">
+                                <i class="ri-paint-line"></i>
+                                <span> Customization </span>
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="plugins-uses.html">
+                                <i class="ri-artboard-2-line"></i>
+                                <span> How to use plugins </span>
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="rtl.html">
+                                <i class="ri-global-line"></i>
+                                <span> RTL Version </span>
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="changelog.html">
+                                <i class="ri-book-open-line"></i>
+                                <span> Changelog </span>
+                            </a>
+                        </li>
+                    </ul>
+
+                </div>
+                <!-- End Sidebar -->
+
+                <div class="clearfix"></div>
+
+            </div>
+            <!-- Sidebar -left -->
+
+        </div>
+        <!-- Left Sidebar End -->
+
+        <!-- ============================================================== -->
+        <!-- Start Page Content here -->
+        <!-- ============================================================== -->
+
+        <div class="content-page">
+            <div class="content">
+
+                <!-- Topbar Start -->
+                <div class="navbar-custom">
+                    <div class="container-fluid">
+
+                        <ul class="list-unstyled topnav-menu float-right mb-0">
+
+                            <li>
+                                <a class="nav-link" href="" target="_blank">
+                                    <i class="ri-customer-service-line font-16 align-middle mr-1"></i> <span class="align-middle">Support</span>
+                                </a>
+                            </li>
+
+                            <li>
+                                <a class="nav-link" href="" target="_blank">
+                                    <i class="ri-shopping-cart-2-line font-16 align-middle mr-1"></i> <span class="align-middle">Buy Now</span>
+                                </a>
+                            </li>
+
+                            <li class="d-none d-sm-inline-block">
+                                <div class="nav-link">
+                                    <span class="badge badge-danger font-14">v1.1.0</span>
+                                </div>
+                            </li>
+
+                        </ul>
+
+                        <!-- LOGO -->
+                        <div class="logo-box">
+
+                            <a href="index.html" class="logo logo-light">
+                                <span class="logo-sm">
+                                    <img src="assets/images/logo-sm.png" alt="" height="24">
+                                </span>
+                                <span class="logo-lg">
+                                    <img src="assets/images/logo-light.png" alt="" height="20">
+                                </span>
+                            </a>
+                        </div>
+
+                        <ul class="list-unstyled topnav-menu topnav-menu-left m-0">
+                            <li>
+                                <button class="button-menu-mobile waves-effect waves-light">
+                                    <i class="fe-menu"></i>
+                                </button>
+                            </li>
+                        </ul>
+                        <div class="clearfix"></div>
+                    </div>
+                </div>
+                <!-- end Topbar -->
+
+                <!-- Start Content-->
+                <div class="container-fluid">
+
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="mb-2 mt-0">RTL Support</h4>
+                            <p>
+                                Adminto also includes built-in support for right-to-left
+                                (RTL) languages. To use RTL support, simply replace the
+                                reference to the standard CSS file with the RTL version.
+                                This will automatically flip the layout and alignment of
+                                elements for proper RTL display. Note that both standard
+                                and RTL CSS files are included in the Adminto package.
+                            </p>
+                            <p class="mb-0">
+                                To enable RTL support in your chosen demo, navigate to the
+                                <code>partials/head-css.ejs</code>
+                                file and replace the reference to
+                                <code>app.min.css</code> with
+                                <code>app-rtl.min.css</code>.
+                                Additionally, don't forget to add the
+                                <code>dir="rtl"</code> attribute to the HTML tag, such as
+                                <code>&lt;html lang="en" dir="rtl"&gt;</code>
+                            </p>
+                        </div>
+                    </div>
+
+                </div> <!-- container -->
+
+            </div> <!-- content -->
+
+            <!-- Footer Start -->
+            <footer class="footer">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <script>document.write(new Date().getFullYear())</script> &copy; Adminto theme by <a href="https://coderthemes.com/" target="_blank">Coderthemes</a>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-md-right footer-links d-none d-sm-block">
+                                <a href="https://coderthemes.com/">About Us</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+            <!-- end Footer -->
+
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- End Page content -->
+        <!-- ============================================================== -->
+
+
+    </div>
+    <!-- END wrapper -->
+
+    <!-- Vendor js -->
+    <script src="assets/js/vendor.min.js"></script>
+
+    <!-- App js -->
+    <script src="assets/js/app.min.js"></script>
+
+</body>
+
+</html>
