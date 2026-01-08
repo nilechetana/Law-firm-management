@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Create Invoice</title>
+</head>
+<body>
+
+<h2>Create Invoice</h2>
+<hr>
+
+<form id="invoiceForm">
+
+  <!-- Client -->
+  <label>Client</label><br>
+  <select required>
+    <option value="">Select Client</option>
+    <option>ABC Pvt Ltd</option>
+    <option>Rahul Sharma</option>
+  </select>
+  <br><br>
+
+  <!-- Case -->
+  <label>Case</label><br>
+  <select required>
+    <option value="">Select Case</option>
+    <option>Property Dispute</option>
+    <option>Contract Case</option>
+  </select>
+  <br><br>
+
+  <!-- Country -->
+  <label>Country</label><br>
+  <select id="country">
+    <option value="india">India</option>
+    <option value="other">Other</option>
+  </select>
+  <br><br>
+
+  <!-- Tax -->
+  <label id="taxLabel">GST (%)</label><br>
+  <input type="number" id="taxPercent" value="18">
+  <br><br>
+
+  <!-- Line Item -->
+  <h3>Line Item</h3>
+
+  <label>Description</label><br>
+  <input type="text" placeholder="Service description">
+  <br><br>
+
+  <label>Quantity</label><br>
+  <input type="number" id="qty" value="1">
+  <br><br>
+
+  <label>Rate</label><br>
+  <input type="number" id="rate" value="0">
+  <br><br>
+
+  <button type="button" onclick="calculateTotal()">Calculate</button>
+
+  <h3>Summary</h3>
+  <p>Subtotal: ₹ <span id="subtotal">0</span></p>
+  <p>Tax: ₹ <span id="taxAmount">0</span></p>
+  <p><b>Grand Total: ₹ <span id="grandTotal">0</span></b></p>
+
+  <br>
+  <button type="submit">Save Draft</button>
+  <button type="button">Generate Invoice</button>
+
+</form>
+
+<!-- JAVASCRIPT -->
+<script>
+  // GST / VAT toggle
+  const country = document.getElementById("country");
+  const taxLabel = document.getElementById("taxLabel");
+
+  country.addEventListener("change", function () {
+    if (this.value === "india") {
+      taxLabel.innerText = "GST (%)";
+    } else {
+      taxLabel.innerText = "VAT (%)";
+    }
+  });
+
+  // Calculation logic
+  function calculateTotal() {
+    const qty = Number(document.getElementById("qty").value);
+    const rate = Number(document.getElementById("rate").value);
+    const taxPercent = Number(document.getElementById("taxPercent").value);
+
+    const subtotal = qty * rate;
+    const tax = (subtotal * taxPercent) / 100;
+    const total = subtotal + tax;
+
+    document.getElementById("subtotal").innerText = subtotal;
+    document.getElementById("taxAmount").innerText = tax;
+    document.getElementById("grandTotal").innerText = total;
+  }
+</script>
+
+</body>
+</html>
