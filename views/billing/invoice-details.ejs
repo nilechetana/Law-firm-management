@@ -1,0 +1,76 @@
+<%- include('../partials/html') %>
+<head>
+  <%- include('../partials/title-meta') %>
+  <%- include('../partials/head-css') %>
+</head>
+
+<body>
+<div class="wrapper">
+  <%- include('../partials/menu') %>
+
+  <div class="page-content">
+    <div class="page-container">
+
+      <h4 class="mb-4">Invoice Detail</h4>
+
+      <div id="invoiceInfo"></div>
+
+      <h5 class="mt-4">Items</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Qty</th>
+            <th>Rate</th>
+            <th>Tax</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody id="itemsTable"></tbody>
+      </table>
+
+    </div>
+    <%- include('../partials/footer') %>
+  </div>
+</div>
+
+<%- include('../partials/footer-scripts') %>
+
+<script>
+async function loadInvoice() {
+  const id = window.location.pathname.split("/").pop();
+  const res = await fetch(`/billing/api/invoices/${id}`);
+  const data = await res.json();
+
+  const inv = data.invoice;
+  const items = data.items;
+
+  document.getElementById("invoiceInfo").innerHTML = `
+    <p><b>Invoice ID:</b> ${inv.id}</p>
+    <p><b>Country:</b> ${inv.country}</p>
+    <p><b>State:</b> ${inv.state || "-"}</p>
+    <p><b>Tax Mode:</b> ${inv.tax_mode}</p>
+    <p><b>Subtotal:</b> ₹ ${inv.subtotal}</p>
+    <p><b>Tax:</b> ₹ ${inv.tax_total}</p>
+    <h5><b>Grand Total:</b> ₹ ${inv.grand_total}</h5>
+  `;
+
+  const tbody = document.getElementById("itemsTable");
+  items.forEach(i => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${i.description}</td>
+        <td>${i.qty}</td>
+        <td>${i.rate}</td>
+        <td>${i.tax_amount}</td>
+        <td>${i.line_total}</td>
+      </tr>
+    `;
+  });
+}
+
+document.addEventListener("DOMContentLoaded", loadInvoice);
+</script>
+
+</body>
+</html>

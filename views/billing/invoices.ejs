@@ -1,2 +1,73 @@
-<h1>Invoices Page</h1>
-<p>This is Invoice List</p>
+<%- include('../partials/html') %>
+<head>
+  <%- include('../partials/title-meta') %>
+  <%- include('../partials/head-css') %>
+</head>
+
+<body>
+<div class="wrapper">
+  <%- include('../partials/menu') %>
+
+  <div class="page-content">
+    <div class="page-container">
+
+      <h4 class="mb-4">Invoices</h4>
+
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Invoice Date</th>
+            <th>Country</th>
+            <th>Tax Mode</th>
+            <th>Grand Total</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="invoiceTable">
+          <tr>
+            <td colspan="7" class="text-center">Loading...</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+    <%- include('../partials/footer') %>
+  </div>
+</div>
+
+<%- include('../partials/footer-scripts') %>
+
+<script>
+async function loadInvoices() {
+  const res = await fetch("/billing/api/invoices");
+  const data = await res.json();
+
+  const tbody = document.getElementById("invoiceTable");
+  tbody.innerHTML = "";
+
+  data.invoices.forEach(inv => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${inv.id}</td>
+        <td>${inv.invoice_date}</td>
+        <td>${inv.country}</td>
+        <td>${inv.tax_mode || "-"}</td>
+        <td>₹ ${inv.grand_total}</td>
+        <td>${inv.status}</td>
+        <td>
+          <a href="/billing/invoices/${inv.id}" class="btn btn-sm btn-primary">
+            View
+          </a>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+document.addEventListener("DOMContentLoaded", loadInvoices);
+</script>
+
+</body>
+</html>

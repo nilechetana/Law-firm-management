@@ -1,102 +1,194 @@
-<!DOCTYPE html>
-<html>
+<%- include('../partials/html') %>
+
 <head>
-  <title>Create Invoice</title>
+  <%- include('../partials/title-meta') %>
+  <%- include('../partials/head-css') %>
 </head>
+
 <body>
+<div class="wrapper">
 
-<h2>Create Invoice</h2>
-<hr>
+  <%- include('../partials/menu') %>
 
-<form id="invoiceForm">
+  <div class="page-content">
+    <div class="page-container">
 
-  <!-- Client -->
-  <label>Client</label><br>
-  <select required>
-    <option value="">Select Client</option>
-    <option>ABC Pvt Ltd</option>
-    <option>Rahul Sharma</option>
-  </select>
-  <br><br>
+      <div class="page-title-box">
+        <h4 class="page-title">Create Invoice</h4>
+      </div>
 
-  <!-- Case -->
-  <label>Case</label><br>
-  <select required>
-    <option value="">Select Case</option>
-    <option>Property Dispute</option>
-    <option>Contract Case</option>
-  </select>
-  <br><br>
+      <form id="invoiceForm">
 
-  <!-- Country -->
-  <label>Country</label><br>
-  <select id="country">
-    <option value="india">India</option>
-    <option value="other">Other</option>
-  </select>
-  <br><br>
+        <!-- ================= CLIENT / CASE ================= -->
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Client</label>
+            <select id="client_id" class="form-select">
+              <option value="">Select Client</option>
+            </select>
+          </div>
 
-  <!-- Tax -->
-  <label id="taxLabel">GST (%)</label><br>
-  <input type="number" id="taxPercent" value="18">
-  <br><br>
+          <div class="col-md-6">
+            <label class="form-label">Case</label>
+            <select id="case_id" class="form-select">
+              <option value="">Select Case</option>
+            </select>
+          </div>
+        </div>
 
-  <!-- Line Item -->
-  <h3>Line Item</h3>
+        <!-- ================= DATES ================= -->
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Invoice Date</label>
+            <input type="date" id="invoice_date" class="form-control">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Due Date</label>
+            <input type="date" id="due_date" class="form-control">
+          </div>
+        </div>
 
-  <label>Description</label><br>
-  <input type="text" placeholder="Service description">
-  <br><br>
+        <!-- ================= LOCATION / TAX ================= -->
+        <div class="row mb-3">
+          <div class="col-md-3">
+            <label class="form-label">Country</label>
+            <select id="country" class="form-select">
+              <option value="India">India</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
 
-  <label>Quantity</label><br>
-  <input type="number" id="qty" value="1">
-  <br><br>
+          <div class="col-md-3">
+            <label class="form-label">Currency</label>
+            <select id="currency" class="form-select">
+              <option value="INR">INR (₹)</option>
+              <option value="USD">USD ($)</option>
+            </select>
+          </div>
 
-  <label>Rate</label><br>
-  <input type="number" id="rate" value="0">
-  <br><br>
+          <div class="col-md-3">
+            <label class="form-label">State</label>
+            <input type="text" id="state" class="form-control">
+          </div>
 
-  <button type="button" onclick="calculateTotal()">Calculate</button>
+          <div class="col-md-3">
+            <label class="form-label" id="taxLabel">GST (%)</label>
+            <input type="number" id="tax_rate" class="form-control" value="18">
+          </div>
+        </div>
 
-  <h3>Summary</h3>
-  <p>Subtotal: ₹ <span id="subtotal">0</span></p>
-  <p>Tax: ₹ <span id="taxAmount">0</span></p>
-  <p><b>Grand Total: ₹ <span id="grandTotal">0</span></b></p>
+        <div class="mb-3">
+          <label class="form-label">Taxable</label>
+          <select id="taxable" class="form-select">
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </div>
 
-  <br>
-  <button type="submit">Save Draft</button>
-  <button type="button">Generate Invoice</button>
+        <!-- ================= LINE ITEMS ================= -->
+        <h5 class="mt-4">Line Items</h5>
 
-</form>
+        <div class="row fw-bold text-muted mb-2">
+          <div class="col-md-4">Description</div>
+          <div class="col-md-2">Qty</div>
+          <div class="col-md-2">Rate</div>
+          <div class="col-md-2">Discount (%)</div>
+        </div>
 
-<!-- JAVASCRIPT -->
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <input type="text" id="description" class="form-control" placeholder="Service description">
+          </div>
+          <div class="col-md-2">
+            <input type="number" id="qty" class="form-control" value="1">
+          </div>
+          <div class="col-md-2">
+            <input type="number" id="rate" class="form-control" value="0">
+          </div>
+          <div class="col-md-2">
+            <input type="number" id="discount" class="form-control" value="0">
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-primary" onclick="calculateInvoice()">Calculate</button>
+
+        <hr>
+
+        <!-- ================= TOTALS ================= -->
+        <p><strong>Subtotal:</strong> ₹ <span id="subtotal">0</span></p>
+        <p><strong>Discount:</strong> ₹ <span id="discountAmount">0</span></p>
+        <p><strong>Tax:</strong> ₹ <span id="taxAmount">0</span></p>
+        <h5><strong>Grand Total:</strong> ₹ <span id="grandTotal">0</span></h5>
+
+        <!-- ================= NOTES ================= -->
+        <div class="mb-3 mt-4">
+          <label class="form-label">Notes</label>
+          <textarea id="notes" class="form-control" rows="3"></textarea>
+        </div>
+
+        <!-- ================= TERMS ================= -->
+        <div class="mb-3">
+          <label class="form-label">Terms & Conditions</label>
+          <textarea id="terms" class="form-control" rows="3"></textarea>
+        </div>
+
+        <button class="btn btn-success mt-3">Save Draft</button>
+
+      </form>
+
+    </div>
+
+    <%- include('../partials/footer') %>
+  </div>
+</div>
+
+<%- include('../partials/footer-scripts') %>
+
 <script>
-  // GST / VAT toggle
-  const country = document.getElementById("country");
-  const taxLabel = document.getElementById("taxLabel");
+/* ================= DROPDOWNS ================= */
+async function loadClients() {
+  const r = await fetch("/billing/api/clients");
+  const d = await r.json();
+  const sel = document.getElementById("client_id");
+  d.clients.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+}
 
-  country.addEventListener("change", function () {
-    if (this.value === "india") {
-      taxLabel.innerText = "GST (%)";
-    } else {
-      taxLabel.innerText = "VAT (%)";
-    }
-  });
+async function loadCases() {
+  const r = await fetch("/billing/api/cases");
+  const d = await r.json();
+  const sel = document.getElementById("case_id");
+  d.cases.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.title}</option>`);
+}
 
-  // Calculation logic
-  function calculateTotal() {
-    const qty = Number(document.getElementById("qty").value);
-    const rate = Number(document.getElementById("rate").value);
-    const taxPercent = Number(document.getElementById("taxPercent").value);
+document.addEventListener("DOMContentLoaded", () => {
+  loadClients();
+  loadCases();
+});
 
-    const subtotal = qty * rate;
-    const tax = (subtotal * taxPercent) / 100;
-    const total = subtotal + tax;
+/* ================= TAX LABEL ================= */
+document.getElementById("country").addEventListener("change", e => {
+  document.getElementById("taxLabel").innerText =
+    e.target.value === "India" ? "GST (%)" : "VAT (%)";
+});
 
-    document.getElementById("subtotal").innerText = subtotal;
-    document.getElementById("taxAmount").innerText = tax;
-    document.getElementById("grandTotal").innerText = total;
-  }
+/* ================= CALCULATION ================= */
+function calculateInvoice() {
+  const qty = +document.getElementById("qty").value;
+  const rate = +document.getElementById("rate").value;
+  const discount = +document.getElementById("discount").value;
+  const taxRate = +document.getElementById("tax_rate").value;
+  const taxable = document.getElementById("taxable").value === "true";
+
+  const line = qty * rate;
+  const discAmt = (line * discount) / 100;
+  const afterDisc = line - discAmt;
+  const tax = taxable ? (afterDisc * taxRate) / 100 : 0;
+
+  document.getElementById("subtotal").innerText = afterDisc.toFixed(2);
+  document.getElementById("discountAmount").innerText = discAmt.toFixed(2);
+  document.getElementById("taxAmount").innerText = tax.toFixed(2);
+  document.getElementById("grandTotal").innerText = (afterDisc + tax).toFixed(2);
+}
 </script>
 
 </body>
