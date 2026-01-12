@@ -1,5 +1,4 @@
 <%- include('../partials/html') %>
-
 <head>
   <%- include('../partials/title-meta') %>
   <%- include('../partials/head-css') %>
@@ -7,19 +6,17 @@
 
 <body>
 <div class="wrapper">
-
   <%- include('../partials/menu') %>
 
   <div class="page-content">
     <div class="page-container">
 
-      <div class="page-title-box">
-        <h4 class="page-title">Create Invoice</h4>
-      </div>
+      <h4 class="mb-4">Create Invoice</h4>
 
+      <!-- ================= MAIN INVOICE FORM ================= -->
       <form id="invoiceForm">
 
-        <!-- ================= CLIENT / CASE ================= -->
+        <!-- Client / Case -->
         <div class="row mb-3">
           <div class="col-md-6">
             <label class="form-label">Client</label>
@@ -36,19 +33,20 @@
           </div>
         </div>
 
-        <!-- ================= DATES ================= -->
+        <!-- Dates -->
         <div class="row mb-3">
           <div class="col-md-6">
             <label class="form-label">Invoice Date</label>
             <input type="date" id="invoice_date" class="form-control">
           </div>
+
           <div class="col-md-6">
             <label class="form-label">Due Date</label>
             <input type="date" id="due_date" class="form-control">
           </div>
         </div>
 
-        <!-- ================= LOCATION / TAX ================= -->
+        <!-- Location -->
         <div class="row mb-3">
           <div class="col-md-3">
             <label class="form-label">Country</label>
@@ -68,12 +66,12 @@
 
           <div class="col-md-3">
             <label class="form-label">State</label>
-            <input type="text" id="state" class="form-control">
+            <input id="state" class="form-control">
           </div>
 
           <div class="col-md-3">
             <label class="form-label" id="taxLabel">GST (%)</label>
-            <input type="number" id="tax_rate" class="form-control" value="18">
+            <input id="tax_rate" type="number" class="form-control" value="18">
           </div>
         </div>
 
@@ -97,47 +95,82 @@
 
         <div class="row mb-3">
           <div class="col-md-4">
-            <input type="text" id="description" class="form-control" placeholder="Service description">
+            <input id="description" class="form-control" placeholder="Service description">
           </div>
           <div class="col-md-2">
-            <input type="number" id="qty" class="form-control" value="1">
+            <input id="qty" type="number" class="form-control" value="1">
           </div>
           <div class="col-md-2">
-            <input type="number" id="rate" class="form-control" value="0">
+            <input id="rate" type="number" class="form-control" value="0">
           </div>
           <div class="col-md-2">
-            <input type="number" id="discount" class="form-control" value="0">
+            <input id="discount" type="number" class="form-control" value="0">
           </div>
         </div>
 
-        <button type="button" class="btn btn-primary" onclick="calculateInvoice()">Calculate</button>
+        <button type="button" class="btn btn-primary" onclick="calculateInvoice()">
+          Calculate
+        </button>
 
         <hr>
 
-        <!-- ================= TOTALS ================= -->
+        <!-- Totals -->
         <p><strong>Subtotal:</strong> ₹ <span id="subtotal">0</span></p>
         <p><strong>Discount:</strong> ₹ <span id="discountAmount">0</span></p>
         <p><strong>Tax:</strong> ₹ <span id="taxAmount">0</span></p>
         <h5><strong>Grand Total:</strong> ₹ <span id="grandTotal">0</span></h5>
 
-        <!-- ================= NOTES ================= -->
-        <div class="mb-3 mt-4">
-          <label class="form-label">Notes</label>
-          <textarea id="notes" class="form-control" rows="3"></textarea>
-        </div>
-
-        <!-- ================= TERMS ================= -->
-        <div class="mb-3">
-          <label class="form-label">Terms & Conditions</label>
-          <textarea id="terms" class="form-control" rows="3"></textarea>
-        </div>
-
         <button class="btn btn-success mt-3">Save Draft</button>
-
       </form>
 
-    </div>
+      <!-- ================= UNBILLED SECTION (AFTER FORM) ================= -->
+      <div class="card mt-5">
+        <div class="card-header">
+          <b>Generate from Unbilled Time / Expenses</b>
+        </div>
+        <div class="card-body">
 
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label>Matter</label>
+              <select id="unbilled_case" class="form-select"></select>
+            </div>
+            <div class="col-md-3">
+              <label>From</label>
+              <input type="date" id="from_date" class="form-control">
+            </div>
+            <div class="col-md-3">
+              <label>To</label>
+              <input type="date" id="to_date" class="form-control">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button class="btn btn-primary w-100" onclick="fetchUnbilled()">
+                Fetch
+              </button>
+            </div>
+          </div>
+
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th width="40"></th>
+                <th>Description</th>
+                <th width="120">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="unbilledTable">
+              <tr>
+                <td colspan="3" class="text-center text-muted">
+                  No data
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+        </div>
+      </div>
+
+    </div>
     <%- include('../partials/footer') %>
   </div>
 </div>
@@ -146,24 +179,17 @@
 
 <script>
 /* ================= DROPDOWNS ================= */
-async function loadClients() {
-  const r = await fetch("/billing/api/clients");
-  const d = await r.json();
-  const sel = document.getElementById("client_id");
-  d.clients.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
-}
-
 async function loadCases() {
   const r = await fetch("/billing/api/cases");
   const d = await r.json();
-  const sel = document.getElementById("case_id");
-  d.cases.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.title}</option>`);
+  const c1 = document.getElementById("case_id");
+  const c2 = document.getElementById("unbilled_case");
+  d.cases.forEach(c => {
+    c1.innerHTML += `<option value="${c.id}">${c.title}</option>`;
+    c2.innerHTML += `<option value="${c.id}">${c.title}</option>`;
+  });
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-  loadClients();
-  loadCases();
-});
+document.addEventListener("DOMContentLoaded", loadCases);
 
 /* ================= TAX LABEL ================= */
 document.getElementById("country").addEventListener("change", e => {
@@ -173,21 +199,47 @@ document.getElementById("country").addEventListener("change", e => {
 
 /* ================= CALCULATION ================= */
 function calculateInvoice() {
-  const qty = +document.getElementById("qty").value;
-  const rate = +document.getElementById("rate").value;
-  const discount = +document.getElementById("discount").value;
-  const taxRate = +document.getElementById("tax_rate").value;
+  const qty = Number(document.getElementById("qty").value || 0);
+  const rate = Number(document.getElementById("rate").value || 0);
+  const discount = Number(document.getElementById("discount").value || 0);
+  const taxRate = Number(document.getElementById("tax_rate").value || 0);
   const taxable = document.getElementById("taxable").value === "true";
 
-  const line = qty * rate;
-  const discAmt = (line * discount) / 100;
-  const afterDisc = line - discAmt;
-  const tax = taxable ? (afterDisc * taxRate) / 100 : 0;
+  const lineTotal = qty * rate;
+  const discountAmount = (lineTotal * discount) / 100;
+  const afterDiscount = lineTotal - discountAmount;
+  const taxAmount = taxable ? (afterDiscount * taxRate) / 100 : 0;
+  const grandTotal = afterDiscount + taxAmount;
 
-  document.getElementById("subtotal").innerText = afterDisc.toFixed(2);
-  document.getElementById("discountAmount").innerText = discAmt.toFixed(2);
-  document.getElementById("taxAmount").innerText = tax.toFixed(2);
-  document.getElementById("grandTotal").innerText = (afterDisc + tax).toFixed(2);
+  document.getElementById("subtotal").innerText = afterDiscount.toFixed(2);
+  document.getElementById("discountAmount").innerText = discountAmount.toFixed(2);
+  document.getElementById("taxAmount").innerText = taxAmount.toFixed(2);
+  document.getElementById("grandTotal").innerText = grandTotal.toFixed(2);
+}
+/* ================= UNBILLED ================= */
+async function fetchUnbilled() {
+  const id = unbilled_case.value;
+  if (!id) return;
+
+  const r = await fetch(`/billing/api/unbilled-items/${id}`);
+  const d = await r.json();
+  const tbody = document.getElementById("unbilledTable");
+  tbody.innerHTML = "";
+
+  if (!d.success || d.items.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="3" class="text-center">No data</td></tr>`;
+    return;
+  }
+
+  d.items.forEach(i => {
+    tbody.innerHTML += `
+      <tr>
+        <td><input type="checkbox"></td>
+        <td>${i.description}</td>
+        <td>₹ ${Number(i.amount).toFixed(2)}</td>
+      </tr>
+    `;
+  });
 }
 </script>
 

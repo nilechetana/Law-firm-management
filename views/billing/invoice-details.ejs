@@ -13,21 +13,40 @@
 
       <h4 class="mb-4">Invoice Detail</h4>
 
-      <div id="invoiceInfo"></div>
+      <!-- ================= INVOICE SUMMARY ================= -->
+      <div class="card mb-4">
+        <div class="card-body" id="invoiceInfo">
+          <p class="text-muted mb-0">Loading invoice...</p>
+        </div>
+      </div>
 
-      <h5 class="mt-4">Items</h5>
-      <table class="table table-bordered">
-        <thead>
-          <tr>
-            <th>Description</th>
-            <th>Qty</th>
-            <th>Rate</th>
-            <th>Tax</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody id="itemsTable"></tbody>
-      </table>
+      <!-- ================= ITEMS ================= -->
+      <h5 class="mb-2">Items</h5>
+
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Description</th>
+              <th width="80">Qty</th>
+              <th width="120">Rate</th>
+              <th width="120">Tax</th>
+              <th width="140">Total</th>
+            </tr>
+          </thead>
+          <tbody id="itemsTable">
+            <tr>
+              <td colspan="5" class="text-center text-muted">
+                Loading items...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <a href="/billing/invoices" class="btn btn-primary mt-3">
+        ← Back to Invoices
+      </a>
 
     </div>
     <%- include('../partials/footer') %>
@@ -38,35 +57,66 @@
 
 <script>
 async function loadInvoice() {
-  const id = window.location.pathname.split("/").pop();
-  const res = await fetch(`/billing/api/invoices/${id}`);
-  const data = await res.json();
+  try {
+    const id = window.location.pathname.split("/").pop();
+    const res = await fetch(`/billing/api/invoices/${id}`);
+    const data = await res.json();
 
-  const inv = data.invoice;
-  const items = data.items;
+    if (!data.success) {
+      document.getElementById("invoiceInfo").innerHTML = `
+        <p class="text-danger mb-0">Something went wrong</p>
+      `;
+      return;
+    }
 
-  document.getElementById("invoiceInfo").innerHTML = `
-    <p><b>Invoice ID:</b> ${inv.id}</p>
-    <p><b>Country:</b> ${inv.country}</p>
-    <p><b>State:</b> ${inv.state || "-"}</p>
-    <p><b>Tax Mode:</b> ${inv.tax_mode}</p>
-    <p><b>Subtotal:</b> ₹ ${inv.subtotal}</p>
-    <p><b>Tax:</b> ₹ ${inv.tax_total}</p>
-    <h5><b>Grand Total:</b> ₹ ${inv.grand_total}</h5>
-  `;
+    const inv = data.invoice;
+    const items = data.items;
 
-  const tbody = document.getElementById("itemsTable");
-  items.forEach(i => {
-    tbody.innerHTML += `
-      <tr>
-        <td>${i.description}</td>
-        <td>${i.qty}</td>
-        <td>${i.rate}</td>
-        <td>${i.tax_amount}</td>
-        <td>${i.line_total}</td>
-      </tr>
+    // ================= SUMMARY =================
+    document.getElementById("invoiceInfo").innerHTML = `
+      <p><b>Invoice ID:</b> ${inv.id}</p>
+      <p><b>Status:</b> ${inv.status}</p>
+      <p><b>Country:</b> ${inv.country || "-"}</p>
+      <p><b>State:</b> ${inv.state || "-"}</p>
+      <p><b>Tax Mode:</b> ${inv.tax_mode || "-"}</p>
+      <p><b>Subtotal:</b> ₹ ${Number(inv.subtotal || 0).toFixed(2)}</p>
+      <p><b>Tax:</b> ₹ ${Number(inv.tax_total || 0).toFixed(2)}</p>
+      <p><b>Grand Total:</b> ₹ ${Number(inv.grand_total || 0).toFixed(2)}</p>
     `;
-  });
+
+    // ================= ITEMS =================
+    const tbody = document.getElementById("itemsTable");
+    tbody.innerHTML = "";
+
+    if (!items || items.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" class="text-center text-muted">
+            No items found
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    items.forEach(i => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${i.description}</td>
+          <td>${i.qty}</td>
+          <td>₹ ${Number(i.rate).toFixed(2)}</td>
+          <td>₹ ${Number(i.tax_amount || 0).toFixed(2)}</td>
+          <td><b>₹ ${Number(i.line_total).toFixed(2)}</b></td>
+        </tr>
+      `;
+    });
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById("invoiceInfo").innerHTML = `
+      <p class="text-danger mb-0">Something went wrong</p>
+    `;
+  }
 }
 
 document.addEventListener("DOMContentLoaded", loadInvoice);

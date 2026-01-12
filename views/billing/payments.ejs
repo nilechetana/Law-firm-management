@@ -1,0 +1,63 @@
+<%- include('../partials/html') %>
+<head>
+  <%- include('../partials/title-meta') %>
+  <%- include('../partials/head-css') %>
+</head>
+
+<body>
+<div class="wrapper">
+  <%- include('../partials/menu') %>
+
+  <div class="page-content">
+    <div class="page-container">
+
+      <h4 class="mb-4">Payments</h4>
+
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Invoice</th>
+            <th>Amount</th>
+            <th>Method</th>
+            <th>Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="paymentsBody"></tbody>
+      </table>
+
+    </div>
+    <%- include('../partials/footer') %>
+  </div>
+</div>
+
+<%- include('../partials/footer-scripts') %>
+
+<script>
+async function loadPayments() {
+  const res = await fetch("/billing/api/payments");
+  const data = await res.json();
+
+  const tbody = document.getElementById("paymentsBody");
+  tbody.innerHTML = "";
+
+  data.payments.forEach(p => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${p.id}</td>
+        <td>#${p.invoice_id || "-"}</td>
+        <td>₹ ${Number(p.amount).toFixed(2)}</td>
+        <td>${p.payment_method || "-"}</td>
+        <td>${p.payment_date}</td>
+        <td>${p.status}</td>
+      </tr>
+    `;
+  });
+}
+
+document.addEventListener("DOMContentLoaded", loadPayments);
+</script>
+
+</body>
+</html>

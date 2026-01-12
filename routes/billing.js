@@ -2,9 +2,7 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db");
 
-/* =====================================================
-   UI ROUTES
-===================================================== */
+/* ================= INVOICES UI ================= */
 router.get("/invoices", (req, res) => {
   res.render("billing/invoices", { title: "Invoices" });
 });
@@ -14,213 +12,184 @@ router.get("/invoices/new", (req, res) => {
 });
 
 router.get("/invoices/:id", (req, res) => {
-  res.render("billing/invoice-detail", { title: "Invoice Detail" });
+  res.render("billing/invoice-details", { title: "Invoice Detail" });
 });
 
-/* =====================================================
-   API : GET INVOICES LIST
-===================================================== */
-router.get("/api/invoices", async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT id, invoice_date, country, tax_mode, grand_total, status
-      FROM invoices
-      ORDER BY id DESC
-    `);
-
-    res.json({ success: true, invoices: result.rows });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+/* ================= TIME ENTRIES UI ================= */
+router.get("/time-entries", (req, res) => {
+  res.render("billing/time-entries", { title: "Time Entries" });
 });
 
-/* =====================================================
-   API : CREATE INVOICE (DRAFT)
-===================================================== */
-router.post("/api/invoices", async (req, res) => {
-  try {
-    const {
-      client_id,
-      case_id,
-      invoice_date,
-      due_date,
-      currency,
-      country,
-      state,
-      notes,
-      terms,
-      items
-    } = req.body;
-
-    if (!invoice_date || !due_date || !items || items.length === 0) {
-      return res.status(400).json({ success: false, error: "Missing fields" });
-    }
-
-    /* -------- TAX MODE -------- */
-    let tax_mode = "NONE";
-    if (country === "India") {
-      tax_mode = state?.toLowerCase() === "maharashtra"
-        ? "CGST_SGST"
-        : "IGST";
-    } else {
-      tax_mode = "VAT";
-    }
-
-    let subtotal = 0;
-    let tax_total = 0;
-
-    items.forEach(i => {
-      const line = i.qty * i.rate;
-      const discountAmt = (line * (i.discount || 0)) / 100;
-      const taxableAmt = line - discountAmt;
-
-      subtotal += taxableAmt;
-      if (i.taxable) {
-        tax_total += (taxableAmt * i.tax_rate) / 100;
-      }
-    });
-
-    const grand_total = subtotal + tax_total;
-
-    /* -------- INSERT INVOICE -------- */
-    const invRes = await pool.query(
-      `
-      INSERT INTO invoices
-      (client_id, case_id, invoice_date, due_date, currency, country, state,
-       tax_mode, status, subtotal, tax_total, grand_total, notes, terms)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'draft',$9,$10,$11,$12,$13)
-      RETURNING id
-      `,
-      [
-        client_id,
-        case_id,
-        invoice_date,
-        due_date,
-        currency,
-        country,
-        state,
-        tax_mode,
-        subtotal,
-        tax_total,
-        grand_total,
-        notes,
-        terms
-      ]
-    );
-
-    const invoiceId = invRes.rows[0].id;
-
-    /* -------- INSERT ITEMS -------- */
-    for (const i of items) {
-      const line = i.qty * i.rate;
-      const discountAmt = (line * (i.discount || 0)) / 100;
-      const taxableAmt = line - discountAmt;
-      const taxAmt = i.taxable ? (taxableAmt * i.tax_rate) / 100 : 0;
-
-      await pool.query(
-        `
-        INSERT INTO invoice_items
-        (invoice_id, description, qty, rate, discount, taxable,
-         tax_rate, line_subtotal, tax_amount, line_total)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-        `,
-        [
-          invoiceId,
-          i.description,
-          i.qty,
-          i.rate,
-          i.discount || 0,
-          i.taxable,
-          i.tax_rate,
-          taxableAmt,
-          taxAmt,
-          taxableAmt + taxAmt
-        ]
-      );
-    }
-
-    res.json({ success: true, invoice_id: invoiceId, tax_mode });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, error: err.message });
-  }
+/* ================= EXPENSES UI ================= */
+router.get("/expenses", (req, res) => {
+  res.render("billing/expenses", { title: "Expenses" });
 });
 
-/* =====================================================
-   API : GET INVOICE DETAIL
-===================================================== */
-router.get("/api/invoices/:id", async (req, res) => {
-  try {
-    const invoice = await pool.query(
-      "SELECT * FROM invoices WHERE id=$1",
-      [req.params.id]
-    );
-
-    if (invoice.rows.length === 0) {
-      return res.json({ success: false });
-    }
-
-    const items = await pool.query(
-      "SELECT * FROM invoice_items WHERE invoice_id=$1",
-      [req.params.id]
-    );
-
-    res.json({
-      success: true,
-      invoice: invoice.rows[0],
-      items: items.rows
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-/* =====================================================
-   API : FINALIZE INVOICE
-===================================================== */
-router.post("/api/invoices/:id/finalize", async (req, res) => {
-  try {
-    await pool.query(
-      "UPDATE invoices SET status='final' WHERE id=$1",
-      [req.params.id]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-/* =====================================================
-   API : PAYMENTS
-===================================================== */
-router.post("/api/invoices/:id/payments", async (req, res) => {
-  const { amount, paid_on, reference } = req.body;
-  try {
-    await pool.query(
-      `
-      INSERT INTO payments (invoice_id, amount, paid_on, reference)
-      VALUES ($1,$2,$3,$4)
-      `,
-      [req.params.id, amount, paid_on, reference]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-/* =====================================================
-   DROPDOWNS
-===================================================== */
-router.get("/api/clients", async (req, res) => {
-  const r = await pool.query("SELECT id, name FROM clients ORDER BY name");
-  res.json({ success: true, clients: r.rows });
-});
-
+/* ================= CASES DROPDOWN ================= */
 router.get("/api/cases", async (req, res) => {
-  const r = await pool.query("SELECT id, title FROM cases ORDER BY id DESC");
+  const r = await pool.query(`SELECT id, title FROM cases ORDER BY id DESC`);
   res.json({ success: true, cases: r.rows });
+});
+
+/* ================= TIME ENTRIES API ================= */
+router.get("/api/time-entries", async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT
+        te.id,
+        te.created_at::date AS date,
+        c.title AS matter,
+        te.activity,
+        te.description,
+        te.duration_minutes,
+        te.rate,
+        (te.duration_minutes / 60.0 * te.rate) AS amount,
+        te.billable,
+        te.status
+      FROM time_entries te
+      LEFT JOIN cases c ON c.id = te.matter_id
+      ORDER BY te.created_at DESC
+    `);
+    res.json({ success: true, entries: r.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post("/api/time-entries", async (req, res) => {
+  const { matter_id, activity, description, duration_minutes, rate, billable } = req.body;
+  try {
+    await pool.query(`
+      INSERT INTO time_entries
+      (matter_id, user_id, activity, description, duration_minutes, rate, billable, status)
+      VALUES ($1, 1, $2, $3, $4, $5, $6, 'unbilled')
+    `, [matter_id, activity, description, duration_minutes, rate, billable]);
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/* ================= EXPENSES API ================= */
+router.get("/api/expenses", async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT
+        e.id,
+        e.created_at::date AS date,
+        c.title AS matter,
+        e.amount,
+        e.taxable,
+        e.notes,
+        e.status
+      FROM expenses e
+      LEFT JOIN cases c ON c.id = e.matter_id
+      ORDER BY e.created_at DESC
+    `);
+    res.json({ success: true, expenses: r.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post("/api/expenses", async (req, res) => {
+  const { matter_id, amount, taxable, notes } = req.body;
+  try {
+    await pool.query(`
+      INSERT INTO expenses
+      (matter_id, amount, taxable, notes, status)
+      VALUES ($1, $2, $3, $4, 'unbilled')
+    `, [matter_id, amount, taxable, notes]);
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/* ================= UNBILLED ITEMS ================= */
+router.get("/api/unbilled-items/:case_id", async (req, res) => {
+  try {
+    const time = await pool.query(`
+      SELECT id,'time' AS type,activity AS description,
+      (duration_minutes / 60.0 * rate) AS amount
+      FROM time_entries
+      WHERE matter_id=$1 AND status='unbilled'
+    `, [req.params.case_id]);
+
+    const exp = await pool.query(`
+      SELECT id,'expense' AS type,notes AS description,amount
+      FROM expenses
+      WHERE matter_id=$1 AND status='unbilled'
+    `, [req.params.case_id]);
+
+    res.json({ success: true, items: [...time.rows, ...exp.rows] });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/* ================= INVOICE APIs ================= */
+router.get("/api/invoices", async (req, res) => {
+  const r = await pool.query(`
+    SELECT id, invoice_date, country, tax_mode, grand_total, status
+    FROM invoices ORDER BY id DESC
+  `);
+  res.json({ success: true, invoices: r.rows });
+});
+
+router.get("/api/invoices/:id", async (req, res) => {
+  const inv = await pool.query(`SELECT * FROM invoices WHERE id=$1`, [req.params.id]);
+  if (!inv.rows.length) return res.json({ success: false });
+
+  const items = await pool.query(
+    `SELECT * FROM invoice_items WHERE invoice_id=$1`,
+    [req.params.id]
+  );
+
+  res.json({ success: true, invoice: inv.rows[0], items: items.rows });
+});
+
+/* ================= PAYMENTS (ONLY ONE FINAL VERSION) ================= */
+router.get("/payments", (req, res) => {
+  res.render("billing/payments", { title: "Payments" });
+});
+
+router.get("/api/payments", async (req, res) => {
+  const r = await pool.query(`
+    SELECT id, invoice_id, amount, payment_method, paid_on
+    FROM payments ORDER BY paid_on DESC
+  `);
+  res.json({ success: true, payments: r.rows });
+});
+
+router.post("/api/payments", async (req, res) => {
+  const { invoice_id, amount, payment_method } = req.body;
+
+  try {
+    await pool.query(`
+      INSERT INTO payments (invoice_id, amount, payment_method)
+      VALUES ($1, $2, $3)
+    `, [invoice_id, amount, payment_method]);
+
+    const paid = await pool.query(`
+      SELECT COALESCE(SUM(amount),0) total FROM payments WHERE invoice_id=$1
+    `, [invoice_id]);
+
+    const inv = await pool.query(
+      `SELECT grand_total FROM invoices WHERE id=$1`,
+      [invoice_id]
+    );
+
+    const status = paid.rows[0].total >= inv.rows[0].grand_total ? "paid" : "partial";
+
+    await pool.query(`UPDATE invoices SET status=$1 WHERE id=$2`, [status, invoice_id]);
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 module.exports = router;

@@ -14,8 +14,6 @@ dotenv.config({ path: "./.env" });
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 
-// ❌ DO NOT USE express-ejs-layouts
-
 // --------------------
 // Middlewares
 // --------------------
@@ -44,9 +42,7 @@ const mainRoutes = require("./routes/route");
 const billingRoutes = require("./routes/billing");
 
 app.use("/", mainRoutes);
-app.use("/billing", billingRoutes);
-app.use("/billing", require("./routes/billing"));
-
+app.use("/billing", billingRoutes);   // ✅ ONLY ONCE
 
 // --------------------
 // Server
