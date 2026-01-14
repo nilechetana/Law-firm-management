@@ -13,6 +13,35 @@
 
       <h4 class="mb-4">Payments</h4>
 
+      <!-- 🔹 FILTERS (ADDED – does not break existing logic) -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label">From Date</label>
+              <input type="date" id="fromDate" class="form-control">
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">To Date</label>
+              <input type="date" id="toDate" class="form-control">
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Invoice ID</label>
+              <input type="text" id="invoiceId" class="form-control" placeholder="Invoice ID">
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end">
+              <button class="btn btn-primary w-100" onclick="loadPayments()">
+                Apply Filters
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 🔹 PAYMENTS TABLE (UNCHANGED) -->
       <table class="table table-bordered">
         <thead>
           <tr>
@@ -36,11 +65,30 @@
 
 <script>
 async function loadPayments() {
-  const res = await fetch("/billing/api/payments");
+  const from = document.getElementById("fromDate")?.value;
+  const to = document.getElementById("toDate")?.value;
+  const invoiceId = document.getElementById("invoiceId")?.value;
+
+  let query = [];
+  if (from) query.push(`from=${from}`);
+  if (to) query.push(`to=${to}`);
+  if (invoiceId) query.push(`invoiceId=${invoiceId}`);
+
+  const url =
+    "/billing/api/payments" +
+    (query.length ? "?" + query.join("&") : "");
+
+  const res = await fetch(url);
   const data = await res.json();
 
   const tbody = document.getElementById("paymentsBody");
   tbody.innerHTML = "";
+
+  if (!data.payments || !data.payments.length) {
+    tbody.innerHTML =
+      `<tr><td colspan="6" class="text-center">No payments found</td></tr>`;
+    return;
+  }
 
   data.payments.forEach(p => {
     tbody.innerHTML += `
@@ -49,7 +97,7 @@ async function loadPayments() {
         <td>#${p.invoice_id || "-"}</td>
         <td>₹ ${Number(p.amount).toFixed(2)}</td>
         <td>${p.payment_method || "-"}</td>
-        <td>${p.payment_date}</td>
+        <td>${p.payment_date || "-"}</td>
         <td>${p.status}</td>
       </tr>
     `;

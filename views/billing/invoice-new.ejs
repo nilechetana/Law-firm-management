@@ -13,7 +13,6 @@
 
       <h4 class="mb-4">Create Invoice</h4>
 
-      <!-- ================= MAIN INVOICE FORM ================= -->
       <form id="invoiceForm">
 
         <!-- Client / Case -->
@@ -82,71 +81,69 @@
             <option value="false">No</option>
           </select>
         </div>
+<div class="card mt-3 p-3">
+  <p>Subtotal: ₹ <span id="sub">0.00</span></p>
+  <p>Tax: ₹ <span id="tax">0.00</span></p>
+  <h5>Grand Total: ₹ <span id="grand">0.00</span></h5>
+</div>
 
         <!-- ================= LINE ITEMS ================= -->
         <h5 class="mt-4">Line Items</h5>
 
-        <div class="row fw-bold text-muted mb-2">
-          <div class="col-md-4">Description</div>
-          <div class="col-md-2">Qty</div>
-          <div class="col-md-2">Rate</div>
-          <div class="col-md-2">Discount (%)</div>
-        </div>
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th width="80">Qty</th>
+              <th width="120">Rate</th>
+              <th width="120">Discount %</th>
+              <th width="120">Total</th>
+              <th width="40"></th>
+            </tr>
+          </thead>
+          <tbody id="lineItems">
+            <tr>
+              <td><input class="form-control desc"></td>
+              <td><input type="number" class="form-control qty" value="1"></td>
+              <td><input type="number" class="form-control rate" value="0"></td>
+              <td><input type="number" class="form-control discount" value="0"></td>
+              <td class="line-total">0.00</td>
+              <td>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">×</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-        <div class="row mb-3">
-          <div class="col-md-4">
-            <input id="description" class="form-control" placeholder="Service description">
-          </div>
-          <div class="col-md-2">
-            <input id="qty" type="number" class="form-control" value="1">
-          </div>
-          <div class="col-md-2">
-            <input id="rate" type="number" class="form-control" value="0">
-          </div>
-          <div class="col-md-2">
-            <input id="discount" type="number" class="form-control" value="0">
-          </div>
-        </div>
-
-        <button type="button" class="btn btn-primary" onclick="calculateInvoice()">
-          Calculate
-        </button>
+        <button type="button" class="btn btn-secondary" onclick="addRow()">Add Line</button>
 
         <hr>
 
         <!-- Totals -->
-        <p><strong>Subtotal:</strong> ₹ <span id="subtotal">0</span></p>
-        <p><strong>Discount:</strong> ₹ <span id="discountAmount">0</span></p>
-        <p><strong>Tax:</strong> ₹ <span id="taxAmount">0</span></p>
-        <h5><strong>Grand Total:</strong> ₹ <span id="grandTotal">0</span></h5>
+        <div class="row">
+          <div class="col-md-4 offset-md-8">
+            <p><b>Subtotal:</b> ₹ <span id="subtotal">0.00</span></p>
+            <p><b>Discount:</b> ₹ <span id="discountAmount">0.00</span></p>
+            <p><b>Tax:</b> ₹ <span id="taxAmount">0.00</span></p>
+            <h5><b>Grand Total:</b> ₹ <span id="grandTotal">0.00</span></h5>
+          </div>
+        </div>
 
         <button class="btn btn-success mt-3">Save Draft</button>
       </form>
 
-      <!-- ================= UNBILLED SECTION (AFTER FORM) ================= -->
+      <!-- ================= UNBILLED ================= -->
       <div class="card mt-5">
-        <div class="card-header">
-          <b>Generate from Unbilled Time / Expenses</b>
-        </div>
+        <div class="card-header"><b>Generate from Unbilled</b></div>
         <div class="card-body">
 
           <div class="row mb-3">
-            <div class="col-md-4">
+            <div class="col-md-6">
               <label>Matter</label>
               <select id="unbilled_case" class="form-select"></select>
             </div>
-            <div class="col-md-3">
-              <label>From</label>
-              <input type="date" id="from_date" class="form-control">
-            </div>
-            <div class="col-md-3">
-              <label>To</label>
-              <input type="date" id="to_date" class="form-control">
-            </div>
             <div class="col-md-2 d-flex align-items-end">
-              <button class="btn btn-primary w-100" onclick="fetchUnbilled()">
-                Fetch
-              </button>
+              <button class="btn btn-primary w-100" onclick="fetchUnbilled()">Fetch</button>
             </div>
           </div>
 
@@ -158,13 +155,7 @@
                 <th width="120">Amount</th>
               </tr>
             </thead>
-            <tbody id="unbilledTable">
-              <tr>
-                <td colspan="3" class="text-center text-muted">
-                  No data
-                </td>
-              </tr>
-            </tbody>
+            <tbody id="unbilledTable"></tbody>
           </table>
 
         </div>
@@ -178,69 +169,94 @@
 <%- include('../partials/footer-scripts') %>
 
 <script>
-/* ================= DROPDOWNS ================= */
+/* ---------------- HELPERS ---------------- */
+function addRow(desc="", rate=0) {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td><input class="form-control desc" value="${desc}"></td>
+    <td><input type="number" class="form-control qty" value="1"></td>
+    <td><input type="number" class="form-control rate" value="${rate}"></td>
+    <td><input type="number" class="form-control discount" value="0"></td>
+    <td class="line-total">0.00</td>
+    <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">×</button></td>
+  `;
+  document.getElementById("lineItems").appendChild(tr);
+}
+
+function removeRow(btn) {
+  btn.closest("tr").remove();
+  calculateTotals();
+}
+
+document.addEventListener("input", calculateTotals);
+
+/* ---------------- TOTALS ---------------- */
+function calculateTotals() {
+  let subtotal = 0, discountTotal = 0;
+
+  document.querySelectorAll("#lineItems tr").forEach(r => {
+    const q = +r.querySelector(".qty").value || 0;
+    const rate = +r.querySelector(".rate").value || 0;
+    const d = +r.querySelector(".discount").value || 0;
+
+    const line = q * rate;
+    const disc = (line * d) / 100;
+    const net = line - disc;
+
+    r.querySelector(".line-total").innerText = net.toFixed(2);
+    subtotal += net;
+    discountTotal += disc;
+  });
+
+  const taxRate = +tax_rate.value || 0;
+  const taxable = taxableSelect.value === "true";
+  const tax = taxable ? (subtotal * taxRate) / 100 : 0;
+
+  subtotalEl.innerText = subtotal.toFixed(2);
+  discountEl.innerText = discountTotal.toFixed(2);
+  taxEl.innerText = tax.toFixed(2);
+  grandEl.innerText = (subtotal + tax).toFixed(2);
+}
+
+/* ---------------- UNBILLED ---------------- */
+async function fetchUnbilled() {
+  const id = unbilled_case.value;
+  const r = await fetch(`/billing/api/unbilled-items/${id}`);
+  const d = await r.json();
+  const t = unbilledTable;
+  t.innerHTML = "";
+
+  d.items.forEach(i => {
+    t.innerHTML += `
+      <tr>
+        <td><input type="checkbox" onchange="this.checked && addRow('${i.description}', ${i.amount})"></td>
+        <td>${i.description}</td>
+        <td>₹ ${i.amount}</td>
+      </tr>`;
+  });
+}
+
+/* ---------------- INIT ---------------- */
+const subtotalEl = document.getElementById("subtotal");
+const discountEl = document.getElementById("discountAmount");
+const taxEl = document.getElementById("taxAmount");
+const grandEl = document.getElementById("grandTotal");
+const taxableSelect = document.getElementById("taxable");
+
 async function loadCases() {
   const r = await fetch("/billing/api/cases");
   const d = await r.json();
-  const c1 = document.getElementById("case_id");
-  const c2 = document.getElementById("unbilled_case");
   d.cases.forEach(c => {
-    c1.innerHTML += `<option value="${c.id}">${c.title}</option>`;
-    c2.innerHTML += `<option value="${c.id}">${c.title}</option>`;
+    case_id.innerHTML += `<option value="${c.id}">${c.title}</option>`;
+    unbilled_case.innerHTML += `<option value="${c.id}">${c.title}</option>`;
   });
 }
 document.addEventListener("DOMContentLoaded", loadCases);
 
-/* ================= TAX LABEL ================= */
-document.getElementById("country").addEventListener("change", e => {
-  document.getElementById("taxLabel").innerText =
-    e.target.value === "India" ? "GST (%)" : "VAT (%)";
+country.addEventListener("change", e => {
+  taxLabel.innerText = e.target.value === "India" ? "GST (%)" : "VAT (%)";
 });
 
-/* ================= CALCULATION ================= */
-function calculateInvoice() {
-  const qty = Number(document.getElementById("qty").value || 0);
-  const rate = Number(document.getElementById("rate").value || 0);
-  const discount = Number(document.getElementById("discount").value || 0);
-  const taxRate = Number(document.getElementById("tax_rate").value || 0);
-  const taxable = document.getElementById("taxable").value === "true";
-
-  const lineTotal = qty * rate;
-  const discountAmount = (lineTotal * discount) / 100;
-  const afterDiscount = lineTotal - discountAmount;
-  const taxAmount = taxable ? (afterDiscount * taxRate) / 100 : 0;
-  const grandTotal = afterDiscount + taxAmount;
-
-  document.getElementById("subtotal").innerText = afterDiscount.toFixed(2);
-  document.getElementById("discountAmount").innerText = discountAmount.toFixed(2);
-  document.getElementById("taxAmount").innerText = taxAmount.toFixed(2);
-  document.getElementById("grandTotal").innerText = grandTotal.toFixed(2);
-}
-/* ================= UNBILLED ================= */
-async function fetchUnbilled() {
-  const id = unbilled_case.value;
-  if (!id) return;
-
-  const r = await fetch(`/billing/api/unbilled-items/${id}`);
-  const d = await r.json();
-  const tbody = document.getElementById("unbilledTable");
-  tbody.innerHTML = "";
-
-  if (!d.success || d.items.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="3" class="text-center">No data</td></tr>`;
-    return;
-  }
-
-  d.items.forEach(i => {
-    tbody.innerHTML += `
-      <tr>
-        <td><input type="checkbox"></td>
-        <td>${i.description}</td>
-        <td>₹ ${Number(i.amount).toFixed(2)}</td>
-      </tr>
-    `;
-  });
-}
 </script>
 
 </body>

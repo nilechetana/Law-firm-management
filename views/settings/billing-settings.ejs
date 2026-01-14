@@ -1,0 +1,217 @@
+<% const title = "Billing Settings"; %>
+<%- include('../partials/html') %>
+
+<head>
+  <%- include('../partials/title-meta', { title: title }) %>
+  <%- include('../partials/head-css') %>
+</head>
+
+<body>
+<div class="wrapper">
+
+  <%- include('../partials/menu') %>
+
+  <div class="page-content">
+    <div class="page-container">
+
+      <h4 class="mb-4">Billing Settings</h4>
+
+      <!-- ================= Activity Types ================= -->
+      <div class="card">
+        <div class="card-header">
+          <strong>Activity Types</strong>
+        </div>
+
+        <div class="card-body">
+          <form id="activityTypeForm" class="row g-3">
+            <div class="col-md-4">
+              <input
+                type="text"
+                id="activityName"
+                class="form-control"
+                placeholder="Activity name"
+                required
+              />
+            </div>
+
+            <div class="col-md-3">
+              <input
+                type="number"
+                id="activityRate"
+                class="form-control"
+                placeholder="Default rate"
+              />
+            </div>
+
+            <div class="col-md-3">
+              <select id="activityBillable" class="form-select">
+                <option value="true">Billable</option>
+                <option value="false">Non-Billable</option>
+              </select>
+            </div>
+
+            <div class="col-md-2">
+              <button class="btn btn-primary w-100" type="submit">
+                Add
+              </button>
+            </div>
+          </form>
+
+          <hr />
+
+          <table class="table table-bordered mt-3">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Billable</th>
+                <th>Default Rate</th>
+              </tr>
+            </thead>
+            <tbody id="activityTable">
+              <tr>
+                <td colspan="3" class="text-center">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ================= Expense Categories ================= -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <strong>Expense Categories</strong>
+        </div>
+
+        <div class="card-body">
+          <form id="expenseCategoryForm" class="row g-3">
+            <div class="col-md-6">
+              <input
+                type="text"
+                id="expenseName"
+                class="form-control"
+                placeholder="Expense category name"
+                required
+              />
+            </div>
+
+            <div class="col-md-4">
+              <select id="expenseTaxable" class="form-select">
+                <option value="true">Taxable</option>
+                <option value="false">Non-Taxable</option>
+              </select>
+            </div>
+
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary w-100">
+                Add
+              </button>
+            </div>
+          </form>
+
+          <hr />
+
+          <table class="table table-bordered mt-3">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Taxable</th>
+              </tr>
+            </thead>
+            <tbody id="expenseCategoryTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <%- include('../partials/footer') %>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer-scripts') %>
+
+<script>
+/* ================= Activity Types ================= */
+
+async function loadActivityTypes() {
+  const res = await fetch("/api/settings/activity-types");
+  const data = await res.json();
+
+  const tbody = document.getElementById("activityTable");
+  tbody.innerHTML = "";
+
+  data.forEach(a => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${a.name}</td>
+        <td>${a.default_billable ? "Yes" : "No"}</td>
+        <td>${a.default_rate_override || "-"}</td>
+      </tr>
+    `;
+  });
+}
+
+document.getElementById("activityTypeForm").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  await fetch("/api/settings/activity-types", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: document.getElementById("activityName").value,
+      default_billable:
+        document.getElementById("activityBillable").value === "true",
+      default_rate_override:
+        document.getElementById("activityRate").value || null
+    })
+  });
+
+  e.target.reset();
+  loadActivityTypes();
+});
+
+/* ================= Expense Categories ================= */
+
+async function loadExpenseCategories() {
+  const res = await fetch("/api/settings/expense-categories");
+  const data = await res.json();
+
+  const tbody = document.getElementById("expenseCategoryTable");
+  tbody.innerHTML = "";
+
+  data.forEach(ec => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${ec.name}</td>
+        <td>${ec.taxable_default ? "Yes" : "No"}</td>
+      </tr>
+    `;
+  });
+}
+
+document
+  .getElementById("expenseCategoryForm")
+  .addEventListener("submit", async e => {
+    e.preventDefault();
+
+    await fetch("/api/settings/expense-categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: document.getElementById("expenseName").value,
+        taxable_default:
+          document.getElementById("expenseTaxable").value === "true"
+      })
+    });
+
+    e.target.reset();
+    loadExpenseCategories();
+  });
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadActivityTypes();
+  loadExpenseCategories();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+  <%- include('../partials/head-css') %>
+</head>
+
+<body>
+
+<div class="container-fluid mt-4">
+
+  <h4 class="mb-4">Billing Reports</h4>
+
+  <!-- SUMMARY CARDS -->
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body">
+          <h6>Total Billed</h6>
+          <h4 id="totalBilled">₹0</h4>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body">
+          <h6>Total Paid</h6>
+          <h4 id="totalPaid">₹0</h4>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body">
+          <h6>Outstanding</h6>
+          <h4 id="outstanding">₹0</h4>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="my-4">
+
+  <!-- INVOICE AGEING -->
+  <h5 class="mb-3">Invoice Ageing</h5>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Age Bucket</th>
+            <th>Total Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>0 – 30 Days</td>
+            <td id="age_0_30">₹0</td>
+          </tr>
+          <tr>
+            <td>31 – 60 Days</td>
+            <td id="age_31_60">₹0</td>
+          </tr>
+          <tr>
+            <td>61 – 90 Days</td>
+            <td id="age_61_90">₹0</td>
+          </tr>
+          <tr>
+            <td>90+ Days</td>
+            <td id="age_90_plus">₹0</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PAYMENT TREND -->
+  <h5 class="mb-3">Payment Trend</h5>
+
+  <div class="card">
+    <div class="card-body">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Invoice</th>
+            <th>Amount</th>
+            <th>Method</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="paymentTrendBody">
+          <tr>
+            <td colspan="5" class="text-muted text-center">
+              Loading payment trend...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/footer-scripts') %>
+
+<!-- BILLING SUMMARY -->
+<script>
+  fetch("/api/reports/billing/summary")
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("totalBilled").innerText = "₹" + (data.totalBilled || 0);
+      document.getElementById("totalPaid").innerText = "₹" + (data.totalPaid || 0);
+      document.getElementById("outstanding").innerText = "₹" + (data.outstanding || 0);
+    })
+    .catch(err => console.error("Billing summary API failed", err));
+</script>
+
+<!-- INVOICE AGEING -->
+<script>
+  fetch("/api/reports/billing/ageing")
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("age_0_30").innerText = "₹" + (data.d0_30 || 0);
+      document.getElementById("age_31_60").innerText = "₹" + (data.d31_60 || 0);
+      document.getElementById("age_61_90").innerText = "₹" + (data.d61_90 || 0);
+      document.getElementById("age_90_plus").innerText = "₹" + (data.d90_plus || 0);
+    })
+    .catch(err => console.error("Invoice ageing API failed", err));
+</script>
+
+<!-- PAYMENT TREND (FIXED) -->
+<script>
+  fetch("/api/reports/billing/payments-trend")
+    .then(res => res.json())
+    .then(data => {
+      const tbody = document.getElementById("paymentTrendBody");
+      tbody.innerHTML = "";
+
+      if (!data.payments || data.payments.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="text-center text-muted">
+              No payment data available
+            </td>
+          </tr>`;
+        return;
+      }
+
+      data.payments.forEach(p => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${p.paid_on ? new Date(p.paid_on).toLocaleDateString() : "-"}</td>
+            <td>#${p.invoice_id}</td>
+            <td>₹${Number(p.amount).toFixed(2)}</td>
+            <td>${p.payment_method || "-"}</td>
+            <td>Paid</td>
+          </tr>
+        `;
+      });
+    })
+    .catch(err => console.error("Payment trend API failed", err));
+</script>
+
+</body>
+</html>

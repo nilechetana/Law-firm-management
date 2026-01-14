@@ -1,7 +1,24 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
+function calculateInvoiceTotals(items) {
+  let subtotal = 0;
+  let taxTotal = 0;
 
+  items.forEach(i => {
+    const base = i.quantity * i.rate;
+    const tax = i.taxable ? (base * i.tax_rate / 100) : 0;
+
+    subtotal += base;
+    taxTotal += tax;
+  });
+
+  return {
+    subtotal,
+    tax: taxTotal,
+    grand_total: subtotal + taxTotal
+  };
+}
 /* ================= INVOICES UI ================= */
 router.get("/invoices", (req, res) => {
   res.render("billing/invoices", { title: "Invoices" });
@@ -43,6 +60,10 @@ router.get("/api/time-entries", async (req, res) => {
         te.description,
         te.duration_minutes,
         te.rate,
+        te.activity_type_id,
+        te.rounding_minutes,
+        te.internal_note,
+        te.invoice_note,
         (te.duration_minutes / 60.0 * te.rate) AS amount,
         te.billable,
         te.status
@@ -57,13 +78,50 @@ router.get("/api/time-entries", async (req, res) => {
 });
 
 router.post("/api/time-entries", async (req, res) => {
-  const { matter_id, activity, description, duration_minutes, rate, billable } = req.body;
+  const {
+    matter_id,
+    activity,
+    description,
+    duration_minutes,
+    rate,
+    billable,
+    activity_type_id,
+    rounding_minutes,
+    internal_note,
+    invoice_note
+  } = req.body;
+
   try {
     await pool.query(`
       INSERT INTO time_entries
-      (matter_id, user_id, activity, description, duration_minutes, rate, billable, status)
-      VALUES ($1, 1, $2, $3, $4, $5, $6, 'unbilled')
-    `, [matter_id, activity, description, duration_minutes, rate, billable]);
+      (
+        matter_id,
+        user_id,
+        activity,
+        description,
+        duration_minutes,
+        rate,
+        billable,
+        activity_type_id,
+        rounding_minutes,
+        internal_note,
+        invoice_note,
+        status
+      )
+      VALUES
+      ($1, 1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'unbilled')
+    `, [
+      matter_id,
+      activity,
+      description,
+      duration_minutes,
+      rate,
+      billable,
+      activity_type_id || null,
+      rounding_minutes || null,
+      internal_note || null,
+      invoice_note || null
+    ]);
 
     res.json({ success: true });
   } catch (err) {
@@ -130,13 +188,55 @@ router.get("/api/unbilled-items/:case_id", async (req, res) => {
   }
 });
 
-/* ================= INVOICE APIs ================= */
+/* ================= INVOICES LIST API ================= */
 router.get("/api/invoices", async (req, res) => {
-  const r = await pool.query(`
-    SELECT id, invoice_date, country, tax_mode, grand_total, status
-    FROM invoices ORDER BY id DESC
-  `);
-  res.json({ success: true, invoices: r.rows });
+  try {
+    const r = await pool.query(`
+      SELECT
+        i.id,
+        i.invoice_date,
+        i.created_at,
+        i.status,
+        i.grand_total,
+        c.name AS client_name,
+        cs.title AS case_title
+      FROM invoices i
+      LEFT JOIN clients c ON c.id = i.client_id
+      LEFT JOIN cases cs ON cs.id = i.case_id
+      ORDER BY i.created_at DESC
+    `);
+
+    res.json({ success: true, invoices: r.rows });
+  } catch (err) {
+    console.error("Invoice list error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post("/api/invoices/:id/items", async (req, res) => {
+  const { description, quantity, rate, taxable, tax_rate } = req.body;
+
+  const base = quantity * rate;
+  const tax_amount = taxable ? (base * tax_rate / 100) : 0;
+  const total = base + tax_amount;
+
+  await pool.query(`
+    INSERT INTO invoice_items
+    (invoice_id, description, quantity, rate, taxable, tax_rate, tax_amount, total)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+  `, [
+    req.params.id,
+    description,
+    quantity,
+    quantity || 1,
+    rate,
+    taxable,
+    tax_rate,
+    tax_amount,
+    total
+  ]);
+
+  res.json({ success: true });
 });
 
 router.get("/api/invoices/:id", async (req, res) => {
@@ -150,8 +250,13 @@ router.get("/api/invoices/:id", async (req, res) => {
 
   res.json({ success: true, invoice: inv.rows[0], items: items.rows });
 });
+router.post("/api/invoices/preview", (req, res) => {
+  const { items } = req.body;
+  const totals = calculateInvoiceTotals(items);
+  res.json({ success: true, totals });
+});
 
-/* ================= PAYMENTS (ONLY ONE FINAL VERSION) ================= */
+/* ================= PAYMENTS ================= */
 router.get("/payments", (req, res) => {
   res.render("billing/payments", { title: "Payments" });
 });

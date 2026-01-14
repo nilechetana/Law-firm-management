@@ -40,7 +40,7 @@
 
 <!-- MODAL -->
 <div class="modal fade" id="timeModal">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5>Add Time Entry</h5>
@@ -53,6 +53,14 @@
           <select id="matter_id" class="form-select"></select>
         </div>
 
+        <!-- ✅ Activity Type (NEW) -->
+        <div class="mb-2">
+          <label>Activity Type</label>
+          <select id="activity_type_id" class="form-select">
+            <option value="">Select Activity Type</option>
+          </select>
+        </div>
+
         <div class="mb-2">
           <label>Activity</label>
           <input id="activity" class="form-control">
@@ -63,9 +71,30 @@
           <textarea id="description" class="form-control"></textarea>
         </div>
 
+        <!-- ✅ Notes (NEW) -->
+        <div class="mb-2">
+          <label>Internal Note (not shown on invoice)</label>
+          <textarea id="internal_note" class="form-control"></textarea>
+        </div>
+
+        <div class="mb-2">
+          <label>Invoice Note (shown on invoice)</label>
+          <textarea id="invoice_note" class="form-control"></textarea>
+        </div>
+
         <div class="mb-2">
           <label>Duration (minutes)</label>
           <input id="duration" type="number" class="form-control">
+        </div>
+
+        <!-- ✅ Rounding (NEW) -->
+        <div class="mb-2">
+          <label>Rounding</label>
+          <select id="rounding_minutes" class="form-select">
+            <option value="">None</option>
+            <option value="6">6 minutes</option>
+            <option value="15">15 minutes</option>
+          </select>
         </div>
 
         <div class="mb-2">
@@ -94,6 +123,7 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   loadMatters();
+  loadActivityTypes();   // ✅ NEW
   loadTimeEntries();
 });
 
@@ -107,6 +137,19 @@ async function loadMatters() {
 
   data.cases.forEach(c => {
     el.innerHTML += `<option value="${c.id}">${c.title}</option>`;
+  });
+}
+
+/* LOAD ACTIVITY TYPES (NEW) */
+async function loadActivityTypes() {
+  const res = await fetch("/api/settings/activity-types");
+  const data = await res.json();
+
+  const el = document.getElementById("activity_type_id");
+  el.innerHTML = "<option value=''>Select Activity Type</option>";
+
+  data.forEach(a => {
+    el.innerHTML += `<option value="${a.id}">${a.name}</option>`;
   });
 }
 
@@ -143,9 +186,13 @@ async function saveTimeEntry() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       matter_id: matter_id.value,
+      activity_type_id: activity_type_id.value || null,   // ✅ NEW
       activity: activity.value,
       description: description.value,
+      internal_note: internal_note.value || null,         // ✅ NEW
+      invoice_note: invoice_note.value || null,           // ✅ NEW
       duration_minutes: duration.value,
+      rounding_minutes: rounding_minutes.value || null,   // ✅ NEW
       rate: rate.value,
       billable: billable.value === "true"
     })
