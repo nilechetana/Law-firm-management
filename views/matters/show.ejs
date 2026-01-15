@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head-css') %>
+  <title>Matter Details</title>
+</head>
+
+<body>
+<div class="layout-wrapper layout-content-navbar">
+  <div class="layout-container">
+
+    <!-- Sidebar -->
+    <%- include('../partials/menu') %>
+
+    <div class="layout-page">
+
+      <!-- Navbar -->
+      <%- include('../partials/horizontal-nav') %>
+
+      <div class="content-wrapper">
+        <div class="container-xxl flex-grow-1 container-p-y">
+
+          <h4 class="fw-bold mb-4">Matter Details</h4>
+
+          <!-- Billing Summary Card -->
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Billing Summary</h5>
+            </div>
+
+            <div class="card-body">
+              <div class="row text-center">
+
+                <div class="col-lg-3 col-md-6 mb-3">
+                  <h6 class="text-muted">Total Billed</h6>
+                  <h4 class="fw-bold mb-0">
+                    ₹ <span id="mb-total-billed">0</span>
+                  </h4>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-3">
+                  <h6 class="text-muted">Total Paid</h6>
+                  <h4 class="fw-bold text-success mb-0">
+                    ₹ <span id="mb-total-paid">0</span>
+                  </h4>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-3">
+                  <h6 class="text-muted">Outstanding</h6>
+                  <h4 class="fw-bold text-danger mb-0">
+                    ₹ <span id="mb-outstanding">0</span>
+                  </h4>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-3">
+                  <h6 class="text-muted">Unbilled Items</h6>
+                  <h4 class="fw-bold mb-0">
+                    <span id="mb-unbilled">0</span>
+                  </h4>
+                </div>
+
+              </div>
+
+              <hr class="my-4" />
+
+              <div class="d-flex justify-content-end gap-2">
+                <a href="/billing/invoices/new?matter=<%= matter.id %>"
+                   class="btn btn-primary">
+                  Create Invoice
+                </a>
+
+                <a href="/billing/invoices?matter=<%= matter.id %>"
+                   class="btn btn-outline-secondary">
+                  View Invoices
+                </a>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <%- include('../partials/footer') %>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer-scripts') %>
+
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+  const matterId = "<%= matter.id %>";
+
+  try {
+    const res = await fetch(`/api/reports/billing/matter/${matterId}`);
+    const data = await res.json();
+
+    document.getElementById("mb-total-billed").innerText = data.totalBilled;
+    document.getElementById("mb-total-paid").innerText = data.totalPaid;
+    document.getElementById("mb-outstanding").innerText = data.outstanding;
+    document.getElementById("mb-unbilled").innerText = data.unbilledCount;
+  } catch (err) {
+    console.error("Billing widget error:", err);
+  }
+});
+</script>
+
+</body>
+</html>

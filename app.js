@@ -25,7 +25,8 @@ const mainRoutes = require("./routes/route");
 const billingRoutes = require("./routes/billing");
 const settingsRoutes = require("./routes/settings");
 const billingReportsRoutes = require("./routes/billing-reports");
-
+const matterRoutes = require("./routes/matters");
+const paymentsRoutes = require("./routes/payments");
 // --------------------
 // View Engine
 // --------------------
@@ -60,7 +61,8 @@ app.use(settingsRoutes);          // /api/settings/*
 app.use("/", mainRoutes);
 app.use("/billing", billingRoutes); // ✅ ONLY ONCE
 app.use("/", billingReportsRoutes);
-
+app.use("/", matterRoutes);
+app.use(paymentsRoutes);
 // --------------------
 // Server
 // --------------------

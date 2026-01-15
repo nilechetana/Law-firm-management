@@ -13,10 +13,11 @@
 
       <h4 class="mb-4">Payments</h4>
 
-      <!-- 🔹 FILTERS (ADDED – does not break existing logic) -->
+      <!-- 🔹 FILTERS (ONLY ADDED – NOTHING REMOVED) -->
       <div class="card mb-3">
         <div class="card-body">
           <div class="row g-3">
+
             <div class="col-md-3">
               <label class="form-label">From Date</label>
               <input type="date" id="fromDate" class="form-control">
@@ -27,21 +28,39 @@
               <input type="date" id="toDate" class="form-control">
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-2">
               <label class="form-label">Invoice ID</label>
               <input type="text" id="invoiceId" class="form-control" placeholder="Invoice ID">
             </div>
 
-            <div class="col-md-3 d-flex align-items-end">
+            <!-- ✅ ADDED: Matter filter (safe optional) -->
+            <div class="col-md-2">
+              <label class="form-label">Matter ID</label>
+              <input type="text" id="matterId" class="form-control" placeholder="Matter ID">
+            </div>
+
+            <!-- ✅ ADDED: Status filter (safe optional) -->
+            <div class="col-md-2">
+              <label class="form-label">Status</label>
+              <select id="status" class="form-select">
+                <option value="">All</option>
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+
+            <div class="col-md-12 mt-3">
               <button class="btn btn-primary w-100" onclick="loadPayments()">
                 Apply Filters
               </button>
             </div>
+
           </div>
         </div>
       </div>
 
-      <!-- 🔹 PAYMENTS TABLE (UNCHANGED) -->
+      <!-- 🔹 PAYMENTS TABLE (100% UNCHANGED) -->
       <table class="table table-bordered">
         <thead>
           <tr>
@@ -69,10 +88,18 @@ async function loadPayments() {
   const to = document.getElementById("toDate")?.value;
   const invoiceId = document.getElementById("invoiceId")?.value;
 
+  // ✅ ADDED (does not affect old logic)
+  const matterId = document.getElementById("matterId")?.value;
+  const status = document.getElementById("status")?.value;
+
   let query = [];
   if (from) query.push(`from=${from}`);
   if (to) query.push(`to=${to}`);
   if (invoiceId) query.push(`invoiceId=${invoiceId}`);
+
+  // ✅ ADDED (safe optional params)
+  if (matterId) query.push(`matterId=${matterId}`);
+  if (status) query.push(`status=${status}`);
 
   const url =
     "/billing/api/payments" +

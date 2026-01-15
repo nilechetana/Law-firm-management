@@ -296,5 +296,60 @@ router.post("/api/payments", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+router.get("/api/payments", async (req, res) => {
+  const { from, to, matterId, invoiceId } = req.query;
+
+  let where = [];
+  let values = [];
+
+  if (from) {
+    values.push(from);
+    where.push(`p.paid_on >= $${values.length}`);
+  }
+
+  if (to) {
+    values.push(to);
+    where.push(`p.paid_on <= $${values.length}`);
+  }
+
+  if (matterId) {
+    values.push(matterId);
+    where.push(`i.matter_id = $${values.length}`);
+  }
+
+  if (invoiceId) {
+    values.push(invoiceId);
+    where.push(`p.invoice_id = $${values.length}`);
+  }
+
+  const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+  try {
+    const result = await pool.query(
+      `
+      SELECT
+        p.paid_on,
+        p.invoice_id,
+        i.matter_id,
+        m.title AS matter_title,
+        c.name AS client_name,
+        p.amount,
+        p.reference
+      FROM payments p
+      JOIN invoices i ON i.id = p.invoice_id
+      LEFT JOIN matters m ON m.id = i.matter_id
+      LEFT JOIN contacts c ON c.id = i.client_contact_id
+      ${whereClause}
+      ORDER BY p.paid_on DESC
+      `,
+      values
+    );
+
+    res.json({ payments: result.rows });
+  } catch (err) {
+    console.error("Payments list error:", err);
+    res.status(500).json({ error: "Failed to load payments list" });
+  }
+});
 
 module.exports = router;
