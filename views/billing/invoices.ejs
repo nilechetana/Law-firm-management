@@ -1,2 +1,119 @@
-<h1>Invoices Page</h1>
-<p>This is Invoice List</p>
+<%- include('../partials/html') %>
+<head>
+  <%- include('../partials/title-meta') %>
+  <%- include('../partials/head-css') %>
+</head>
+
+<body>
+<div class="wrapper">
+  <%- include('../partials/menu') %>
+
+  <div class="page-content">
+    <div class="page-container">
+
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>Invoices</h4>
+        <a href="/billing/invoices/new" class="btn btn-primary">
+          + Create Invoice
+        </a>
+      </div>
+
+      <!-- Invoices Table -->
+      <div class="card">
+        <div class="card-body">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>Invoice No</th>
+                <th>Client</th>
+                <th>Matter</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+
+            <!-- JS will populate this -->
+            <tbody id="invoiceTable">
+              <tr>
+                <td colspan="7" class="text-center text-muted">
+                  Loading invoices...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+    <%- include('../partials/footer') %>
+  </div>
+</div>
+
+<%- include('../partials/footer-scripts') %>
+
+<script>
+async function loadInvoices() {
+  const res = await fetch("/billing/api/invoices");
+  const data = await res.json();
+  const tbody = document.getElementById("invoiceTable");
+
+  tbody.innerHTML = "";
+
+  if (!data.success || data.invoices.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="text-center text-muted">
+          No invoices found
+        </td>
+      </tr>`;
+    return;
+  }
+
+  data.invoices.forEach(inv => {
+    tbody.innerHTML += `
+      <tr>
+        <!-- Invoice No -->
+        <td>INV-${inv.id}</td>
+
+        <!-- Client -->
+        <td>${inv.client_name || "-"}</td>
+
+        <!-- Matter -->
+        <td>${inv.case_title || "-"}</td>
+
+        <!-- Amount -->
+        <td>₹ ${inv.grand_total ? Number(inv.grand_total).toFixed(2) : "0.00"}</td>
+
+        <!-- Status -->
+        <td>
+          <span class="badge ${
+            inv.status === "paid" ? "bg-success" :
+            inv.status === "partial" ? "bg-warning" :
+            inv.status === "unpaid" ? "bg-danger" : "bg-secondary"
+          }">
+            ${inv.status}
+          </span>
+        </td>
+
+        <!-- Created -->
+        <td>${new Date(inv.created_at).toLocaleDateString()}</td>
+
+        <!-- Action -->
+        <td>
+          <a href="/billing/invoices/${inv.id}" class="btn btn-sm btn-primary">
+            View
+          </a>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+document.addEventListener("DOMContentLoaded", loadInvoices);
+</script>
+
+</body>
+</html>

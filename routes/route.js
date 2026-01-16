@@ -457,5 +457,8 @@ route.get('/ui-progress', (req, res, next) => {
     res.render('ui-progress', { title: 'Progress' });
 });
 
+route.get("/settings/billing", (req, res) => {
+  res.render("settings/billing-settings");
+});
 
 module.exports = route;

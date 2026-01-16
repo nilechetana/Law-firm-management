@@ -1,0 +1,152 @@
+<%- include('../partials/html') %>
+<head>
+  <%- include('../partials/title-meta') %>
+  <%- include('../partials/head-css') %>
+</head>
+
+<body>
+<div class="wrapper">
+  <%- include('../partials/menu') %>
+
+  <div class="page-content">
+    <div class="page-container">
+
+      <div class="d-flex justify-content-between mb-3">
+        <h4>Expenses</h4>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#expenseModal">
+          Add Expense
+        </button>
+      </div>
+
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Matter</th>
+            <th>Amount</th>
+            <th>Taxable</th>
+            <th>Notes</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="expensesBody"></tbody>
+      </table>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal fade" id="expenseModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5>Add Expense</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="mb-2">
+          <label>Matter</label>
+          <select id="expense_matter_id" class="form-select"></select>
+        </div>
+
+        <div class="mb-2">
+          <label>Amount</label>
+          <input id="expense_amount" type="number" class="form-control">
+        </div>
+
+        <div class="mb-2">
+          <label>Taxable</label>
+          <select id="expense_taxable" class="form-select">
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </div>
+
+        <div class="mb-2">
+          <label>Notes</label>
+          <textarea id="expense_notes" class="form-control"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="saveExpense()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer-scripts') %>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  loadCases();
+  loadExpenses();
+});
+
+/* LOAD CASES */
+async function loadCases() {
+  const res = await fetch("/billing/api/cases");
+  const data = await res.json();
+
+  const el = document.getElementById("expense_matter_id");
+  el.innerHTML = "<option value=''>Select Matter</option>";
+
+  data.cases.forEach(c => {
+    el.innerHTML += `<option value="${c.id}">${c.title}</option>`;
+  });
+}
+
+/* LOAD EXPENSES */
+async function loadExpenses() {
+  const res = await fetch("/billing/api/expenses");
+  const data = await res.json();
+
+  const tbody = document.getElementById("expensesBody");
+  tbody.innerHTML = "";
+
+  if (!data.success) return;
+
+  data.expenses.forEach(e => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${e.date}</td>
+        <td>${e.matter || "-"}</td>
+        <td>${Number(e.amount).toFixed(2)}</td>
+        <td>${e.taxable ? "Yes" : "No"}</td>
+        <td>${e.notes || "-"}</td>
+        <td>${e.status}</td>
+      </tr>
+    `;
+  });
+}
+
+/* SAVE EXPENSE */
+async function saveExpense() {
+  const res = await fetch("/billing/api/expenses", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      matter_id: expense_matter_id.value,
+      amount: expense_amount.value,
+      taxable: expense_taxable.value === "true",
+      notes: expense_notes.value
+    })
+  });
+
+  const data = await res.json();
+  if (!data.success) {
+    alert("Save failed");
+    return;
+  }
+
+  bootstrap.Modal.getInstance(
+    document.getElementById("expenseModal")
+  ).hide();
+
+  loadExpenses();
+}
+</script>
+</body>
+</html>

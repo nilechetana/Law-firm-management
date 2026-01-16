@@ -878,6 +878,68 @@
                             </div> <!-- end card-->
                         </div> <!-- end col-->
                     </div> <!-- end row-->
+<div class="page-container">
+<!-- ================= Billing Dashboard Widgets ================= -->
+<div class="row mt-4">
+
+    <!-- Collection Summary -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="header-title">Collection Summary</h4>
+            </div>
+            <div class="card-body">
+                <p>Total Billed: <strong id="totalBilled">₹0</strong></p>
+                <p>Total Paid: <strong id="totalPaid">₹0</strong></p>
+                <p>Outstanding: <strong id="outstanding">₹0</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Ageing -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="header-title">Invoice Ageing</h4>
+            </div>
+            <div class="card-body">
+                <p>0–30 Days: <strong id="age0_30">₹0</strong></p>
+                <p>31–60 Days: <strong id="age31_60">₹0</strong></p>
+                <p>61–90 Days: <strong id="age61_90">₹0</strong></p>
+                <p>90+ Days: <strong id="age90_plus">₹0</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Latest Payments -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="header-title">Latest Payments</h4>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Invoice</th>
+                            <th>Matter</th>
+                            <th>Client</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="latestPaymentsBody">
+                        <tr>
+                            <td colspan="5" class="text-center">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+<!-- ============================================================= -->
 
                 </div> <!-- container -->
 

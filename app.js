@@ -1,33 +1,83 @@
-const express = require('express');
+// ====================
+// ENV MUST BE FIRST
+// ====================
+require("dotenv").config();   // 👈 VERY IMPORTANT (LINE 1)
+
+// ====================
+// Core Imports
+// ====================
+const express = require("express");
 const app = express();
-const path = require('path');
-const route = require('./routes/route');
-const expressLayouts = require('express-ejs-layouts');
-const session = require('express-session');
-const cookieParser = require('cookie-parser');
-const upload = require('express-fileupload');
-const dotenv = require('dotenv');
-dotenv.config({ path: "./config.env" });
+const path = require("path");
+const session = require("express-session");
+const cookieParser = require("cookie-parser");
+const upload = require("express-fileupload");
 
-app.set('views', path.join(__dirname, '/views'));
-app.set('view engine', 'ejs');
-app.use(upload());
+// ====================
+// Database (AFTER dotenv)
+// ====================
+const db = require("./db");
 
+// ====================
+// Routes Imports
+// ====================
+const mainRoutes = require("./routes/route");
+const billingRoutes = require("./routes/billing");
+const settingsRoutes = require("./routes/settings");
+const billingReportsRoutes = require("./routes/billing-reports");
+const matterRoutes = require("./routes/matters");
+const paymentsRoutes = require("./routes/payments");
+const dashboardRoutes = require("./routes/dashboard");
+// --------------------
+// View Engine
+// --------------------
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "ejs");
+
+// --------------------
+// Middlewares
+// --------------------
 app.use(express.json());
-app.use(session({ resave: false, saveUninitialized: true, secret: 'nodedemo' }));
+app.use(express.urlencoded({ extended: true }));
+app.use(upload());
 app.use(cookieParser());
-app.use("/billing", require("./routes/billing"));
 
+app.use(
+  session({
+    resave: false,
+    saveUninitialized: true,
+    secret: "nodedemo",
+  })
+);
 
-app.use(express.static(__dirname + '/public'));
+// --------------------
+// Static Files
+// --------------------
+app.use(express.static(path.join(__dirname, "public")));
 
-app.use('/', route);
+// --------------------
+// Routes (ORDER MATTERS)
+// --------------------
+app.use(settingsRoutes);          // /api/settings/*
+app.use("/", mainRoutes);
+app.use("/billing", billingRoutes); // ✅ ONLY ONCE
+app.use("/", billingReportsRoutes);
+app.use("/", matterRoutes);
+app.use(paymentsRoutes);
+app.use(dashboardRoutes);
+// --------------------
+// Server
+// --------------------
+const port = process.env.PORT || 3000;
 
-const http = require("http").createServer(app);
-
-const port = 3000
-
-http.listen(port, () => {
-    console.log(`Server running on port ${port}`)
-    console.log(`http://localhost:${port}`)
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+  console.log(`http://localhost:${port}`);
 });
+
+// --------------------
+// DB Connection Test (TEMP)
+// --------------------
+db.query("select 1")
+  .then(() => console.log("✅ DB connected"))
+  .catch(err => console.error("❌ DB error", err));

@@ -453,6 +453,24 @@
 
     </div>
     <!-- END wrapper -->
+<h3>Invoice Detail</h3>
+<div id="invoice"></div>
+
+<script>
+const id = location.pathname.split("/").pop();
+
+fetch(`/billing/api/invoices/${id}`)
+  .then(res => res.json())
+  .then(data => {
+    const inv = data.invoice;
+    document.getElementById("invoice").innerHTML = `
+      <p>Country: ${inv.country}</p>
+      <p>State: ${inv.state}</p>
+      <p>Tax Mode: ${inv.tax_mode}</p>
+      <p>Total: ${inv.grand_total}</p>
+    `;
+  });
+</script>
 
     <%- include('partials/customizer') %>
 

@@ -1,0 +1,138 @@
+<%- include('../partials/html') %>
+<head>
+  <%- include('../partials/title-meta') %>
+  <%- include('../partials/head-css') %>
+</head>
+
+<body>
+<div class="wrapper">
+  <%- include('../partials/menu') %>
+
+  <div class="page-content">
+    <div class="page-container">
+
+      <h4 class="mb-4">Payments</h4>
+
+      <!-- 🔹 FILTERS (ONLY ADDED – NOTHING REMOVED) -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="row g-3">
+
+            <div class="col-md-3">
+              <label class="form-label">From Date</label>
+              <input type="date" id="fromDate" class="form-control">
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">To Date</label>
+              <input type="date" id="toDate" class="form-control">
+            </div>
+
+            <div class="col-md-2">
+              <label class="form-label">Invoice ID</label>
+              <input type="text" id="invoiceId" class="form-control" placeholder="Invoice ID">
+            </div>
+
+            <!-- ✅ ADDED: Matter filter (safe optional) -->
+            <div class="col-md-2">
+              <label class="form-label">Matter ID</label>
+              <input type="text" id="matterId" class="form-control" placeholder="Matter ID">
+            </div>
+
+            <!-- ✅ ADDED: Status filter (safe optional) -->
+            <div class="col-md-2">
+              <label class="form-label">Status</label>
+              <select id="status" class="form-select">
+                <option value="">All</option>
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+
+            <div class="col-md-12 mt-3">
+              <button class="btn btn-primary w-100" onclick="loadPayments()">
+                Apply Filters
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- 🔹 PAYMENTS TABLE (100% UNCHANGED) -->
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Invoice</th>
+            <th>Amount</th>
+            <th>Method</th>
+            <th>Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="paymentsBody"></tbody>
+      </table>
+
+    </div>
+    <%- include('../partials/footer') %>
+  </div>
+</div>
+
+<%- include('../partials/footer-scripts') %>
+
+<script>
+async function loadPayments() {
+  const from = document.getElementById("fromDate")?.value;
+  const to = document.getElementById("toDate")?.value;
+  const invoiceId = document.getElementById("invoiceId")?.value;
+
+  // ✅ ADDED (does not affect old logic)
+  const matterId = document.getElementById("matterId")?.value;
+  const status = document.getElementById("status")?.value;
+
+  let query = [];
+  if (from) query.push(`from=${from}`);
+  if (to) query.push(`to=${to}`);
+  if (invoiceId) query.push(`invoiceId=${invoiceId}`);
+
+  // ✅ ADDED (safe optional params)
+  if (matterId) query.push(`matterId=${matterId}`);
+  if (status) query.push(`status=${status}`);
+
+  const url =
+    "/billing/api/payments" +
+    (query.length ? "?" + query.join("&") : "");
+
+  const res = await fetch(url);
+  const data = await res.json();
+
+  const tbody = document.getElementById("paymentsBody");
+  tbody.innerHTML = "";
+
+  if (!data.payments || !data.payments.length) {
+    tbody.innerHTML =
+      `<tr><td colspan="6" class="text-center">No payments found</td></tr>`;
+    return;
+  }
+
+  data.payments.forEach(p => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${p.id}</td>
+        <td>#${p.invoice_id || "-"}</td>
+        <td>₹ ${Number(p.amount).toFixed(2)}</td>
+        <td>${p.payment_method || "-"}</td>
+        <td>${p.payment_date || "-"}</td>
+        <td>${p.status}</td>
+      </tr>
+    `;
+  });
+}
+
+document.addEventListener("DOMContentLoaded", loadPayments);
+</script>
+
+</body>
+</html>

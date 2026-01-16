@@ -1,0 +1,316 @@
+<%- include('partials/html') %>  
+<head>
+  <%- include('partials/title-meta') %>
+  <%- include('partials/head-css') %>
+</head>
+
+<body>
+<div class="wrapper">
+  <%- include('partials/menu') %>
+
+  <div class="page-content">
+    <div class="page-container">
+
+      <h4 class="mb-4">Create Invoice</h4>
+
+      <form id="invoiceForm">
+
+      <div class="row g-3">
+
+  <!-- Client Dropdown -->
+  <div class="col-md-6">
+    <label class="form-label">Client</label>
+    <select id="clientSelect" class="form-select">
+      <option value="">Select Client</option>
+    </select>
+  </div>
+
+  <!-- Case Dropdown -->
+  <div class="col-md-6">
+    <label class="form-label">Case</label>
+    <select id="caseSelect" class="form-select">
+      <option value="">Select Case</option>
+    </select>
+  </div>
+
+</div>
+>
+
+        <!-- DATES -->
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label>Invoice Date</label>
+            <input type="date" id="invoice_date" class="form-control">
+          </div>
+          <div class="col-md-6">
+            <label>Due Date</label>
+            <input type="date" id="due_date" class="form-control">
+          </div>
+        </div>
+
+        <!-- LOCATION / TAX -->
+        <div class="row mb-3">
+          <div class="col-md-3">
+            <label>Country</label>
+            <select id="country" class="form-select">
+              <option value="India">India</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label>Currency</label>
+            <select id="currency" class="form-select">
+              <option value="INR">INR (₹)</option>
+              <option value="USD">USD ($)</option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label>State</label>
+            <input type="text" id="state" class="form-control">
+          </div>
+
+          <div class="col-md-3">
+            <label>GST (%)</label>
+            <input type="number" id="tax_rate" class="form-control" value="18">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label>Taxable</label>
+          <select id="taxable" class="form-select">
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </div>
+
+        <!-- LINE ITEM -->
+        <h5 class="mt-4">Line Item</h5>
+
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label>Description</label>
+            <input type="text" id="description" class="form-control" placeholder="Service description">
+          </div>
+
+          <div class="col-md-2">
+            <label>Qty</label>
+            <input type="number" id="qty" class="form-control" value="1">
+          </div>
+
+          <div class="col-md-2">
+            <label>Rate</label>
+            <input type="number" id="rate" class="form-control" value="0">
+          </div>
+
+          <div class="col-md-2">
+            <label>Discount (%)</label>
+            <input type="number" id="discount" class="form-control" value="0">
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-primary" onclick="calculateInvoice()">
+          Calculate
+        </button>
+
+        <hr>
+
+        <!-- SUMMARY -->
+        <p><strong>Subtotal:</strong> ₹ <span id="subtotal">0</span></p>
+        <p><strong>Discount:</strong> ₹ <span id="discountAmount">0</span></p>
+        <p><strong>Tax:</strong> ₹ <span id="taxAmount">0</span></p>
+        <h5><strong>Grand Total:</strong> ₹ <span id="grandTotal">0</span></h5>
+
+        <hr>
+
+        <!-- NOTES -->
+        <div class="row mt-3">
+          <div class="col-md-6">
+            <label>Notes</label>
+            <textarea id="notes" class="form-control" rows="4"></textarea>
+          </div>
+
+          <div class="col-md-6">
+            <label>Terms & Conditions</label>
+            <textarea id="terms" class="form-control" rows="4"></textarea>
+          </div>
+        </div>
+
+        <button class="btn btn-primary mt-4">Save Invoice</button>
+
+      </form>
+
+    </div>
+    <%- include('partials/footer') %>
+  </div>
+</div>
+
+<%- include('partials/footer-scripts') %>
+
+<script>
+/* ===============================
+   PAGE LOAD (ONLY ONCE)
+================================ */
+document.addEventListener("DOMContentLoaded", () => {
+  loadClients();
+  loadCases();
+});
+
+/* ===============================
+   LOAD CLIENTS
+================================ */
+async function loadClients() {
+  const res = await fetch("/billing/api/clients");
+  const data = await res.json();
+
+  const el = document.getElementById("client_id");
+  el.innerHTML = '<option value="">Select Client</option>';
+
+  if (data.clients) {
+    data.clients.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c.id;
+      opt.textContent = c.name;
+      el.appendChild(opt);
+    });
+  }
+}
+
+/* ===============================
+   LOAD CASES
+================================ */
+async function loadCases() {
+  const res = await fetch("/billing/api/cases");
+  const data = await res.json();
+
+  const el = document.getElementById("case_id");
+  el.innerHTML = '<option value="">Select Case</option>';
+
+  if (data.cases) {
+    data.cases.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c.id;
+      opt.textContent = c.title;
+      el.appendChild(opt);
+    });
+  }
+}
+
+/* ===============================
+   CALCULATE
+================================ */
+function calculateInvoice() {
+  const subtotal = qty.value * rate.value;
+  const discountAmt = subtotal * discount.value / 100;
+  const taxableAmt = subtotal - discountAmt;
+  const taxAmt = taxable.value === "true"
+    ? taxableAmt * tax_rate.value / 100
+    : 0;
+
+  subtotalEl.innerText = subtotal.toFixed(2);
+  discountAmount.innerText = discountAmt.toFixed(2);
+  taxAmount.innerText = taxAmt.toFixed(2);
+  grandTotal.innerText = (taxableAmt + taxAmt).toFixed(2);
+}
+
+const subtotalEl = document.getElementById("subtotal");
+const discountAmount = document.getElementById("discountAmount");
+const taxAmount = document.getElementById("taxAmount");
+const grandTotal = document.getElementById("grandTotal");
+
+/* ===============================
+   SUBMIT
+================================ */
+document.getElementById("invoiceForm").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  const payload = {
+    client_id: client_id.value,
+    case_id: case_id.value,
+    invoice_date: invoice_date.value,
+    due_date: due_date.value,
+    currency: currency.value,
+    country: country.value,
+    state: state.value,
+    notes: notes.value,
+    terms: terms.value,
+    items: [{
+      description: description.value,
+      qty: +qty.value,
+      rate: +rate.value,
+      discount: +discount.value,
+      taxable: taxable.value === "true",
+      tax_rate: +tax_rate.value
+    }]
+  };
+
+  const res = await fetch("/billing/api/invoices", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await res.json();
+  alert("Invoice created successfully");
+});
+  // Dummy Client & Case Data
+  const clients = [
+    {
+      id: 1,
+      name: "Rahul Sharma",
+      cases: [
+        { id: 101, title: "Property Dispute" },
+        { id: 102, title: "Divorce Case" }
+      ]
+    },
+    {
+      id: 2,
+      name: "Anita Verma",
+      cases: [
+        { id: 201, title: "Cheque Bounce" },
+        { id: 202, title: "Consumer Complaint" }
+      ]
+    },
+    {
+      id: 3,
+      name: "ABC Pvt Ltd",
+      cases: [
+        { id: 301, title: "GST Notice" },
+        { id: 302, title: "Contract Breach" }
+      ]
+    }
+  ];
+
+  const clientSelect = document.getElementById("clientSelect");
+  const caseSelect = document.getElementById("caseSelect");
+
+  // Populate Client Dropdown
+  clients.forEach(client => {
+    const option = document.createElement("option");
+    option.value = client.id;
+    option.textContent = client.name;
+    clientSelect.appendChild(option);
+  });
+
+  // On Client Change → Populate Case Dropdown
+  clientSelect.addEventListener("change", function () {
+    caseSelect.innerHTML = '<option value="">Select Case</option>';
+
+    const selectedClientId = parseInt(this.value);
+    const selectedClient = clients.find(c => c.id === selectedClientId);
+
+    if (selectedClient) {
+      selectedClient.cases.forEach(c => {
+        const option = document.createElement("option");
+        option.value = c.id;
+        option.textContent = c.title;
+        caseSelect.appendChild(option);
+      });
+    }
+  });
+
+</script>
+
+</body>
+</html>

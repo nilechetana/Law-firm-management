@@ -1,0 +1,184 @@
+<%- include('../partials/html') %>
+<head>
+  <%- include('../partials/title-meta') %>
+  <%- include('../partials/head-css') %>
+</head>
+
+<body>
+<div class="wrapper">
+  <%- include('../partials/menu') %>
+
+  <div class="page-content">
+    <div class="page-container">
+
+      <h4 class="mb-4">Generate Invoice from Unbilled Items</h4>
+
+      <!-- Filters -->
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label class="form-label">Select Case</label>
+          <select id="case_id" class="form-select" onchange="loadUnbilled()">
+            <option value="">Select Case</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">From Date</label>
+          <input type="date" id="from_date" class="form-control">
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">To Date</label>
+          <input type="date" id="to_date" class="form-control">
+        </div>
+
+        <div class="col-md-2 d-flex align-items-end">
+          <button class="btn btn-primary w-100" onclick="loadUnbilled()">
+            Apply
+          </button>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <div class="card">
+        <div class="card-body p-0">
+          <table class="table table-bordered mb-0">
+            <thead class="table-light">
+              <tr>
+                <th width="60">
+                  <input type="checkbox" id="selectAll" onclick="toggleAll(this)">
+                </th>
+                <th>Type</th>
+                <th>Description</th>
+                <th class="text-end">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="itemsBody">
+              <tr>
+                <td colspan="4" class="text-center text-muted">
+                  Select a case to load unbilled items
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="mt-3 text-end">
+        <button class="btn btn-success" onclick="generateInvoice()">
+          Generate Invoice
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer-scripts') %>
+
+<script>
+let ITEMS = [];
+
+/* ================================
+   Load Cases
+================================ */
+document.addEventListener("DOMContentLoaded", loadCases);
+
+async function loadCases() {
+  const res = await fetch("/billing/api/cases");
+  const data = await res.json();
+
+  const el = document.getElementById("case_id");
+  el.innerHTML = `<option value="">Select Case</option>`;
+
+  data.cases.forEach(c => {
+    el.innerHTML += `<option value="${c.id}">${c.title}</option>`;
+  });
+}
+
+/* ================================
+   Load Unbilled Items
+================================ */
+async function loadUnbilled() {
+  const caseId = document.getElementById("case_id").value;
+  if (!caseId) return;
+
+  const res = await fetch(`/billing/api/unbilled-items/${caseId}`);
+  const data = await res.json();
+
+  ITEMS = data.items || [];
+  const tbody = document.getElementById("itemsBody");
+  tbody.innerHTML = "";
+
+  if (ITEMS.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="text-center text-muted">
+          No unbilled items found
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  ITEMS.forEach((i, idx) => {
+    tbody.innerHTML += `
+      <tr>
+        <td>
+          <input type="checkbox" class="item-check" data-idx="${idx}" checked>
+        </td>
+        <td>${i.type}</td>
+        <td>${i.description}</td>
+        <td class="text-end">₹ ${Number(i.amount).toFixed(2)}</td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("selectAll").checked = true;
+}
+
+/* ================================
+   Select / Deselect All
+================================ */
+function toggleAll(el) {
+  document.querySelectorAll(".item-check").forEach(cb => {
+    cb.checked = el.checked;
+  });
+}
+
+/* ================================
+   Generate Invoice
+================================ */
+async function generateInvoice() {
+  const selected = [...document.querySelectorAll(".item-check:checked")]
+    .map(c => ITEMS[c.dataset.idx]);
+
+  if (selected.length === 0) {
+    alert("Please select at least one item");
+    return;
+  }
+
+  const res = await fetch("/billing/api/generate-invoice", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      case_id: document.getElementById("case_id").value,
+      items: selected
+    })
+  });
+
+  const data = await res.json();
+
+  if (!data.success) {
+    alert("Invoice generation failed");
+    return;
+  }
+
+  alert("Invoice Generated Successfully (#" + data.invoice_id + ")");
+  window.location.href = `/billing/invoices/${data.invoice_id}`;
+}
+</script>
+
+</body>
+</html>

@@ -1,4 +1,47 @@
 <!-- Menu -->
 <%- include('./sidenav') %>
-
 <%- include('./topbar') %>
+
+<!-- 
+  OLD DIRECT LINK (kept for safety, not removed)
+  This was causing duplicate Time Entries in sidebar
+-->
+<!--
+<li>
+  <a href="/billing/time-entries">Time Entries</a>
+</li>
+-->
+
+<!-- BILLING MENU -->
+<li class="menu-item">
+  <a href="javascript:void(0);" class="menu-link menu-toggle">
+    <i class="menu-icon tf-icons bx bx-wallet"></i>
+    <div>Billing</div>
+  </a>
+
+  <ul class="menu-sub">
+    <li class="menu-item">
+      <a href="/billing/time-entries" class="menu-link">
+        <div>Time Entries</div>
+      </a>
+    </li>
+
+    <li class="menu-item">
+      <a href="/billing/expenses" class="menu-link">
+        <div>Expenses</div>
+      </a>
+    </li>
+
+    <li class="menu-item">
+      <a href="/billing/payments" class="menu-link">
+        <div>Payments</div>
+      </a>
+    </li>
+
+    <li class="menu-item">
+      <a href="/settings/billing" class="menu-link">
+        <div>Billing Settings</div>
+      </a>
+    </li>
+  </ul>
+</li>

@@ -1,0 +1,213 @@
+<%- include('../partials/html') %>
+<head>
+  <%- include('../partials/title-meta') %>
+  <%- include('../partials/head-css') %>
+</head>
+
+<body>
+<div class="wrapper">
+  <%- include('../partials/menu') %>
+
+  <div class="page-content">
+    <div class="page-container">
+
+      <div class="d-flex justify-content-between mb-3">
+        <h4>Time Entries</h4>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#timeModal">
+          Add Time Entry
+        </button>
+      </div>
+
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Matter</th>
+            <th>Activity</th>
+            <th>Duration (min)</th>
+            <th>Rate</th>
+            <th>Amount</th>
+            <th>Billable</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="timeEntriesBody"></tbody>
+      </table>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal fade" id="timeModal">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5>Add Time Entry</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="mb-2">
+          <label>Matter</label>
+          <select id="matter_id" class="form-select"></select>
+        </div>
+
+        <!-- ✅ Activity Type (NEW) -->
+        <div class="mb-2">
+          <label>Activity Type</label>
+          <select id="activity_type_id" class="form-select">
+            <option value="">Select Activity Type</option>
+          </select>
+        </div>
+
+        <div class="mb-2">
+          <label>Activity</label>
+          <input id="activity" class="form-control">
+        </div>
+
+        <div class="mb-2">
+          <label>Description</label>
+          <textarea id="description" class="form-control"></textarea>
+        </div>
+
+        <!-- ✅ Notes (NEW) -->
+        <div class="mb-2">
+          <label>Internal Note (not shown on invoice)</label>
+          <textarea id="internal_note" class="form-control"></textarea>
+        </div>
+
+        <div class="mb-2">
+          <label>Invoice Note (shown on invoice)</label>
+          <textarea id="invoice_note" class="form-control"></textarea>
+        </div>
+
+        <div class="mb-2">
+          <label>Duration (minutes)</label>
+          <input id="duration" type="number" class="form-control">
+        </div>
+
+        <!-- ✅ Rounding (NEW) -->
+        <div class="mb-2">
+          <label>Rounding</label>
+          <select id="rounding_minutes" class="form-select">
+            <option value="">None</option>
+            <option value="6">6 minutes</option>
+            <option value="15">15 minutes</option>
+          </select>
+        </div>
+
+        <div class="mb-2">
+          <label>Rate</label>
+          <input id="rate" type="number" class="form-control">
+        </div>
+
+        <div class="mb-2">
+          <label>Billable</label>
+          <select id="billable" class="form-select">
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="saveTimeEntry()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer-scripts') %>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  loadMatters();
+  loadActivityTypes();   // ✅ NEW
+  loadTimeEntries();
+});
+
+/* LOAD CASES */
+async function loadMatters() {
+  const res = await fetch("/billing/api/cases");
+  const data = await res.json();
+
+  const el = document.getElementById("matter_id");
+  el.innerHTML = "<option value=''>Select Matter</option>";
+
+  data.cases.forEach(c => {
+    el.innerHTML += `<option value="${c.id}">${c.title}</option>`;
+  });
+}
+
+/* LOAD ACTIVITY TYPES (NEW) */
+async function loadActivityTypes() {
+  const res = await fetch("/api/settings/activity-types");
+  const data = await res.json();
+
+  const el = document.getElementById("activity_type_id");
+  el.innerHTML = "<option value=''>Select Activity Type</option>";
+
+  data.forEach(a => {
+    el.innerHTML += `<option value="${a.id}">${a.name}</option>`;
+  });
+}
+
+/* LOAD TIME ENTRIES */
+async function loadTimeEntries() {
+  const res = await fetch("/billing/api/time-entries");
+  const data = await res.json();
+
+  const tbody = document.getElementById("timeEntriesBody");
+  tbody.innerHTML = "";
+
+  if (!data.success) return;
+
+  data.entries.forEach(e => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${e.date}</td>
+        <td>${e.matter || "-"}</td>
+        <td>${e.activity}</td>
+        <td>${e.duration_minutes}</td>
+        <td>${e.rate}</td>
+        <td>${Number(e.amount).toFixed(2)}</td>
+        <td>${e.billable ? "Yes" : "No"}</td>
+        <td>${e.status}</td>
+      </tr>
+    `;
+  });
+}
+
+/* SAVE TIME ENTRY */
+async function saveTimeEntry() {
+  const res = await fetch("/billing/api/time-entries", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      matter_id: matter_id.value,
+      activity_type_id: activity_type_id.value || null,   // ✅ NEW
+      activity: activity.value,
+      description: description.value,
+      internal_note: internal_note.value || null,         // ✅ NEW
+      invoice_note: invoice_note.value || null,           // ✅ NEW
+      duration_minutes: duration.value,
+      rounding_minutes: rounding_minutes.value || null,   // ✅ NEW
+      rate: rate.value,
+      billable: billable.value === "true"
+    })
+  });
+
+  const data = await res.json();
+  if (!data.success) {
+    alert("Save failed");
+    return;
+  }
+
+  bootstrap.Modal.getInstance(document.getElementById("timeModal")).hide();
+  loadTimeEntries();
+}
+</script>
+
+</body>
+</html>
